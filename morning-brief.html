@@ -1128,7 +1128,8 @@
   // ─── Supabase Configuration ───────────────────────────────────────────
   const SUPABASE_URL = 'https://byrvsttdxaaroospomhj.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_E0u4n_rdwtjJfQsv0Pr8BQ_qznLBwd4';
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { createClient } = supabase;
+  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
   // ─── Sources Config ────────────────────────────────────────────────────
   const SOURCES = [
     {
