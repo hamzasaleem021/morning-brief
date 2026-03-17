@@ -656,7 +656,7 @@
   </div>
   <div class="masthead-meta">
     <span id="today-date">—</span>
-    <span id="source-count">4 Sources</span>
+    <span id="source-count">Loading...</span>
     <span id="last-refreshed">Fetching...</span>
     <span id="sync-status" style="cursor:pointer" onclick="handleSyncClick()">☁ Sign in to sync</span>
   </div>
@@ -669,7 +669,7 @@
     <a href="#seth" class="source-pill seth active"><span class="pill-dot"></span>Seth Godin</a>
     <a href="#yc" class="source-pill yc active"><span class="pill-dot"></span>YC Library</a>
     <a href="#fs" class="source-pill fs active"><span class="pill-dot"></span>Farnam Street</a>
-    <a href="#pg" class="source-pill pg active"><span class="pill-dot"></span>Paul Graham</a>
+    <a href="#pg" class="source-pill pg active"><span class="pill-dot"></span>The Diff</a>
     <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M23 4v6h-6M1 20v-6h6"/>
@@ -683,8 +683,7 @@
 <!-- Error notice -->
 <div class="main">
   <div class="error-notice" id="error-notice">
-    <strong>Note:</strong> Some feeds couldn't be fetched directly due to browser security restrictions (CORS). 
-    Articles shown are cached or sample entries. <a href="#" onclick="openManageModal(); return false;">Learn more →</a>
+    <strong>Note:</strong> One or more feeds couldn't be fetched. Sample posts are shown for those sources — live content will load once the feed becomes available.
   </div>
 
   <!-- Seth Godin -->
@@ -723,11 +722,11 @@
 
   <hr class="section-divider">
 
-  <!-- Paul Graham -->
+  <!-- The Diff -->
   <div class="source-section" id="pg">
     <div class="section-header" style="border-bottom-color: var(--pg)">
-      <span class="section-name">Paul Graham</span>
-      <span class="section-domain">paulgraham.com</span>
+      <span class="section-name">The Diff</span>
+      <span class="section-domain">thediff.co</span>
       <span class="section-count" id="pg-count">Loading...</span>
     </div>
     <div id="pg-articles"><div class="loading-state"><div class="loading-spinner"></div><p class="loading-text">Fetching latest posts...</p></div></div>
@@ -736,7 +735,7 @@
 </div>
 <footer>
   <div class="footer-left">Morning Brief — yours alone</div>
-  <div style="font-size:0.72rem; color: var(--ink-muted)">No tracking · No accounts · Runs locally</div>
+  <div style="font-size:0.72rem; color: var(--ink-muted)">No ads · No algorithm · Your sources only</div>
   <button class="manage-btn" onclick="openManageModal()">⚙ Manage Sources</button>
 </footer>
 
@@ -755,20 +754,16 @@
       <div class="add-source-form">
         <h3>Add a Source</h3>
         <div class="form-row">
-          <input type="text" class="form-input" id="new-source-name" placeholder="Source name (e.g. Paul Graham)">
+          <input type="text" class="form-input" id="new-source-name" placeholder="Source name (e.g. The Verge)">
         </div>
         <div class="form-row">
-          <input type="text" class="form-input" id="new-source-url" placeholder="RSS feed URL (e.g. https://paulgraham.com/rss.html)">
+          <input type="text" class="form-input" id="new-source-url" placeholder="RSS feed URL (e.g. https://theverge.com/rss/index.xml)">
           <button class="btn-add-source" onclick="addSourceFromModal()">Add</button>
         </div>
       </div>
 
       <div class="cors-note">
-        <strong>About fetching:</strong> This app runs entirely in your browser with no server. 
-        Some sites block direct RSS fetching (CORS policy). To reliably load all sources, 
-        this app uses a free public RSS proxy. <strong>No data is stored anywhere.</strong> 
-        Everything stays between your browser and the source's public feed.
-        Your custom sources are saved locally in your browser and persist across sessions.
+        <strong>About fetching:</strong> Morning Brief fetches RSS feeds through your personal Cloudflare Worker — a private relay you own and control. No third party sees your sources. Your sync settings are stored privately in your Google Drive. Nothing is shared, sold, or tracked.
       </div>
     </div>
   </div>
@@ -828,15 +823,15 @@
     },
     {
       id: 'pg',
-      name: 'Paul Graham',
-      domain: 'paulgraham.com',
+      name: 'The Diff',
+      domain: 'thediff.co',
       color: '#bf4f00',
-      rss: 'https://www.aaronsw.com/2002/feeds/pgessays.rss',
+      rss: 'https://www.thediff.co/feed',
       fallback: [
-        { title: "How to Do Great Work", date: "Jul 2023", excerpt: "The key to doing great work is to find something you're naturally curious about and then pursue it with genuine interest. Curiosity is the engine of discovery.", url: "https://paulgraham.com/greatwork.html" },
-        { title: "Superlinear Returns", date: "Oct 2023", excerpt: "The most important thing to understand about the future of work is that returns are becoming increasingly superlinear — the best performers get disproportionately more.", url: "https://paulgraham.com/superlinear.html" },
-        { title: "Founder Mode", date: "Sep 2024", excerpt: "There are two modes of running a company: founder mode and manager mode. They are not the same and conflating them causes startups to fail at scale.", url: "https://paulgraham.com/foundermode.html" },
-        { title: "What to Do With Your Life", date: "Jan 2025", excerpt: "The question of what to do with your life is really a question about what kind of person you want to become and what problems seem worth solving to you personally.", url: "https://paulgraham.com" },
+        { title: "The Diff: Finance, Business & Macro", date: "Recent", excerpt: "The Diff covers business strategy, finance, and macro economics with an analytical edge. Written by Byrne Hobart.", url: "https://www.thediff.co" },
+        { title: "Markets, Media, and Monopoly", date: "Recent", excerpt: "How platform economics and media dynamics interact to create winner-take-all outcomes in modern markets.", url: "https://www.thediff.co" },
+        { title: "The Leverage Cycle", date: "Recent", excerpt: "Understanding how leverage builds and unwinds across financial systems — and why it matters for every investor.", url: "https://www.thediff.co" },
+        { title: "Optionality and Its Discontents", date: "Recent", excerpt: "Keeping your options open has a cost that compounds quietly over time. The best decisions often eliminate options.", url: "https://www.thediff.co" },
       ]
     }
   ];
