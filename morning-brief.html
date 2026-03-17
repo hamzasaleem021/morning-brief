@@ -1259,6 +1259,7 @@
   // ─── localStorage ─────────────────────────────────────────────────────
   const STORAGE_KEY = 'morning_brief_custom_sources';
   const REMOVED_KEY = 'morning_brief_removed_defaults';
+  const ORDER_KEY   = 'morning_brief_source_order';
 
   // FIX 3: COLORS and colorIndex declared BEFORE loadCustomSources runs
   const COLORS = ['#c0392b','#16a085','#8e44ad','#d35400','#27ae60','#2980b9','#b7791f','#f39c12'];
@@ -1267,6 +1268,33 @@
   function saveCustomSources() {
     const custom = SOURCES.filter(s => s.custom);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(custom));
+  }
+
+  // Save the full order of all source IDs
+  function saveSourceOrder() {
+    localStorage.setItem(ORDER_KEY, JSON.stringify(SOURCES.map(s => s.id)));
+  }
+
+  // On startup — reorder SOURCES array to match saved order
+  function applySourceOrder() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(ORDER_KEY) || '[]');
+      if (!saved.length) return;
+      // Reorder SOURCES to match saved order — only for IDs that exist
+      const ordered = [];
+      saved.forEach(id => {
+        const s = SOURCES.find(x => x.id === id);
+        if (s) ordered.push(s);
+      });
+      // Append any new sources not in saved order
+      SOURCES.forEach(s => {
+        if (!ordered.find(x => x.id === s.id)) ordered.push(s);
+      });
+      SOURCES.length = 0;
+      ordered.forEach(s => SOURCES.push(s));
+    } catch(e) {
+      console.warn('Could not restore source order:', e);
+    }
   }
 
   function saveRemovedDefault(id) {
@@ -1512,7 +1540,6 @@
         e.preventDefault();
         if (!dragId || row.dataset.id === dragId) return;
 
-        // Reorder SOURCES array
         const fromIdx = SOURCES.findIndex(s => s.id === dragId);
         const toIdx = SOURCES.findIndex(s => s.id === row.dataset.id);
         if (fromIdx === -1 || toIdx === -1) return;
@@ -1520,13 +1547,8 @@
         const [moved] = SOURCES.splice(fromIdx, 1);
         SOURCES.splice(toIdx, 0, moved);
 
-        // Reorder page sections
         reorderPageSections();
-
-        // Save order
-        saveCustomSources();
-
-        // Re-render modal list
+        saveSourceOrder(); // persist the new order
         renderModalSources();
       });
     });
@@ -1785,6 +1807,8 @@
   setDate();
   applyRemovedDefaults();
   loadCustomSources();
+  applySourceOrder();    // restore saved order — after all sources loaded
+  reorderPageSections(); // apply order to DOM
   handleOAuthCallback();
   loadAll();
 
