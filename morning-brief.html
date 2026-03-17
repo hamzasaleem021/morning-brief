@@ -1110,14 +1110,14 @@
 </div>
 
 <script>
-  // ─── Capture OAuth token hash FIRST before anything else runs ─────────
-  // Google returns token in URL hash: #access_token=xxx&...
-  // Must be captured immediately before any code can clear window.location.hash
+  // ─── Capture OAuth token/error hash FIRST before anything else runs ───
   const _oauthHash = window.location.hash;
-  if (_oauthHash && _oauthHash.includes('access_token')) {
+  if (_oauthHash && (_oauthHash.includes('access_token') || _oauthHash.includes('error'))) {
     const _hp = new URLSearchParams(_oauthHash.substring(1));
     const _tk = _hp.get('access_token');
+    const _err = _hp.get('error');
     if (_tk) sessionStorage.setItem('mb_pending_token', _tk);
+    if (_err) sessionStorage.setItem('mb_pending_error', _err);
     window.history.replaceState({}, document.title, window.location.pathname);
   }
   // ─── Sources Config ────────────────────────────────────────────────────
@@ -1664,31 +1664,56 @@
     if (accessToken) {
       syncFromDrive();
     } else {
-      startOAuthFlow();
+      startOAuthFlow(false); // explicit sign in — shows Google prompt
     }
   }
 
-  // ─── Implicit flow — token returned directly in URL hash ──────────────
-  function startOAuthFlow() {
-    setSyncStatus('syncing', '⏳ Connecting...');
+  // ─── Implicit flow — silent first, prompt as fallback ────────────────
+  function startOAuthFlow(silent = false) {
+    if (!silent) setSyncStatus('syncing', '⏳ Connecting...');
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
       response_type: 'token',
       scope: SCOPES,
-      prompt: 'consent'
+      prompt: silent ? 'none' : 'consent'
     });
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+  }
+
+  // ─── Try silent sign in on every open ────────────────────────────────
+  // Uses prompt=none — no popup, no redirect visible to user if already signed in
+  // Falls back gracefully if session expired
+  function trySilentSignIn() {
+    // Only attempt if user has signed in before on this device
+    const hasSigned = localStorage.getItem('mb_has_signed_in');
+    if (!hasSigned) return;
+
+    // Try silent auth — redirects back instantly with token if Google session active
+    startOAuthFlow(true);
   }
 
   // ─── Handle OAuth callback — reads token stored at page load ─────────
   function handleOAuthCallback() {
     const token = sessionStorage.getItem('mb_pending_token');
-    if (!token) return;
+    const error = sessionStorage.getItem('mb_pending_error');
+
     sessionStorage.removeItem('mb_pending_token');
-    accessToken = token;
-    setSyncStatus('synced', '✓ Signed in');
-    syncFromDrive();
+    sessionStorage.removeItem('mb_pending_error');
+
+    if (error) {
+      // Silent sign in failed — session expired or not signed in
+      // Don't show any error — just stay in unsynced state silently
+      return;
+    }
+
+    if (token) {
+      accessToken = token;
+      // Mark that user has signed in on this device — enables future silent sign ins
+      localStorage.setItem('mb_has_signed_in', '1');
+      setSyncStatus('synced', '✓ Synced across devices');
+      syncFromDrive();
+    }
   }
 
   // ─── Read config from Drive ───────────────────────────────────────────
@@ -1816,10 +1841,16 @@
   setDate();
   applyRemovedDefaults();
   loadCustomSources();
-  applySourceOrder();    // restore saved order — after all sources loaded
-  reorderPageSections(); // apply order to DOM
-  handleOAuthCallback();
+  applySourceOrder();
+  reorderPageSections();
+  handleOAuthCallback(); // handles both silent and manual token returns
   loadAll();
+
+  // Try silent sign in after app loads — non-blocking
+  // Only runs if user has signed in before on this device
+  setTimeout(() => {
+    if (!accessToken) trySilentSignIn();
+  }, 1500);
 
   // ─── Dark Mode ────────────────────────────────────────────────────────
   const THEME_KEY = 'morning_brief_theme';

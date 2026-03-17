@@ -1,4 +1,4 @@
-const CACHE = 'morning-brief-v4';
+const CACHE = 'morning-brief-v5';
 const ASSETS = ['./morning-brief.html'];
 
 self.addEventListener('install', e => {
