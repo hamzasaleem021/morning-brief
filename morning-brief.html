@@ -1066,27 +1066,41 @@
       <!-- Sync status — contextual, inside modal only -->
       <div id="modal-sync-bar" style="
         display:flex;
-        align-items:center;
-        justify-content:space-between;
-        padding:10px 14px;
+        flex-direction:column;
+        gap:10px;
+        padding:12px 14px;
         background:var(--accent-soft);
         border-radius:8px;
         margin-bottom:16px;
         font-family:var(--body);
         font-size:0.78rem;
       ">
-        <span id="modal-sync-text" style="color:var(--ink-light)">☁ Not synced across devices</span>
-        <button id="modal-sync-btn" onclick="handleModalSync()" style="
-          background:var(--accent);
-          border:none;
-          border-radius:6px;
-          color:white;
-          font-family:var(--body);
-          font-size:0.75rem;
-          font-weight:500;
-          padding:6px 14px;
-          cursor:pointer;
-        ">Sign in</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+          <span id="modal-sync-text" style="color:var(--ink-light)">☁ Not synced across devices</span>
+          <button id="modal-sync-btn" onclick="handleModalSync()" style="
+            background:var(--accent);
+            border:none;
+            border-radius:6px;
+            color:white;
+            font-family:var(--body);
+            font-size:0.75rem;
+            font-weight:500;
+            padding:6px 14px;
+            cursor:pointer;
+          ">Sign in</button>
+        </div>
+        <div id="modal-sync-email" style="display:flex;gap:8px;">
+          <input type="email" id="modal-sync-email-input" placeholder="Your email address" style="
+            flex:1;
+            padding:6px 10px;
+            border:1px solid var(--rule);
+            border-radius:6px;
+            font-family:var(--body);
+            font-size:0.75rem;
+            background:var(--paper);
+            color:var(--ink);
+          ">
+        </div>
       </div>
 
       <div id="all-sources-list"></div>
@@ -1103,23 +1117,18 @@
       </div>
 
       <div class="cors-note">
-        <strong>About fetching:</strong> Morning Brief fetches RSS feeds through your personal Cloudflare Worker — a private relay you own and control. No third party sees your sources. Your sync settings are stored privately in your Google Drive. Nothing is shared, sold, or tracked.
+        <strong>About fetching:</strong> Morning Brief fetches RSS feeds through your personal Cloudflare Worker — a private relay you own and control. No third party sees your sources. Your sync settings are stored securely in your private Supabase database. Nothing is shared, sold, or tracked.
       </div>
     </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ─── Capture OAuth token/error hash FIRST before anything else runs ───
-  const _oauthHash = window.location.hash;
-  if (_oauthHash && (_oauthHash.includes('access_token') || _oauthHash.includes('error'))) {
-    const _hp = new URLSearchParams(_oauthHash.substring(1));
-    const _tk = _hp.get('access_token');
-    const _err = _hp.get('error');
-    if (_tk) sessionStorage.setItem('mb_pending_token', _tk);
-    if (_err) sessionStorage.setItem('mb_pending_error', _err);
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
+  // ─── Supabase Configuration ───────────────────────────────────────────
+  const SUPABASE_URL = 'https://byrvsttdxaaroospomhj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_E0u4n_rdwtjJfQsv0Pr8BQ_qznLBwd4';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   // ─── Sources Config ────────────────────────────────────────────────────
   const SOURCES = [
     {
@@ -1382,8 +1391,8 @@
 
     // Keep modal open — update sync bar to prompt sync
     renderModalSources();
-    if (accessToken) {
-      saveToDrive();
+    if (currentUser) {
+      saveToSupabase();
       setSyncStatus('synced', '✓ Synced across devices');
     } else {
       setSyncStatus('', '☁ Sign in to sync this new source across devices');
@@ -1493,7 +1502,7 @@
   function openManageModal() {
     renderModalSources();
     // Refresh sync status when modal opens
-    if (accessToken) {
+    if (currentUser) {
       setSyncStatus('synced', '✓ Synced across devices');
     } else {
       setSyncStatus('', '☁ Not synced across devices');
@@ -1624,135 +1633,135 @@
     document.getElementById('source-count').textContent = `${SOURCES.length} Source${SOURCES.length !== 1 ? 's' : ''}`;
   }
 
-  // ─── Google Drive Sync ────────────────────────────────────────────────
-  const CLIENT_ID = '405529181817-jc9oi3rpb4up7ni6l2em63vvfe8u19m7.apps.googleusercontent.com';
-  const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
-  const DRIVE_FILE = 'morning-brief-config.json';
-  const REDIRECT_URI = 'https://hamzasaleem021.github.io/morning-brief/morning-brief.html';
-
-  let accessToken = null;
-  let driveFileId = null;
+  // ─── Supabase Sync ────────────────────────────────────────────────────
+  let currentUser = null;
 
   function setSyncStatus(state, text) {
-    // Update modal sync bar instead of masthead
     const syncText = document.getElementById('modal-sync-text');
     const syncBtn = document.getElementById('modal-sync-btn');
+    const emailInput = document.getElementById('modal-sync-email');
     if (!syncText || !syncBtn) return;
 
     if (state === 'synced') {
-      syncText.textContent = '✓ Synced across devices';
+      syncText.textContent = text || '✓ Synced across devices';
       syncText.style.color = 'var(--success, #00b894)';
       syncBtn.style.display = 'none';
+      if (emailInput) emailInput.style.display = 'none';
     } else if (state === 'syncing') {
-      syncText.textContent = '⏳ Syncing...';
+      syncText.textContent = text || '⏳ Syncing...';
       syncText.style.color = 'var(--accent)';
       syncBtn.style.display = 'none';
+      if (emailInput) emailInput.style.display = 'none';
     } else if (state === 'error') {
-      syncText.textContent = '⚠ Sync failed — try again';
-      syncText.style.color = 'var(--accent2)';
+      syncText.textContent = text || '⚠ Sync failed — try again';
+      syncText.style.color = 'var(--accent)';
       syncBtn.textContent = 'Retry';
       syncBtn.style.display = 'block';
+      if (emailInput) emailInput.style.display = 'none';
+    } else if (state === 'email_sent') {
+      syncText.textContent = text || '✉️ Check your email for the sign-in link';
+      syncText.style.color = 'var(--accent)';
+      syncBtn.style.display = 'none';
+      if (emailInput) emailInput.style.display = 'none';
     } else {
-      syncText.textContent = '☁ Not synced across devices';
+      syncText.textContent = text || '☁ Not synced across devices';
       syncText.style.color = 'var(--ink-light)';
       syncBtn.textContent = 'Sign in';
       syncBtn.style.display = 'block';
+      if (emailInput) emailInput.style.display = 'flex';
     }
   }
 
-  function handleModalSync() {
-    if (accessToken) {
-      syncFromDrive();
-    } else {
-      startOAuthFlow(false); // explicit sign in — shows Google prompt
-    }
-  }
-
-  // ─── Implicit flow — silent first, prompt as fallback ────────────────
-  function startOAuthFlow(silent = false) {
-    if (!silent) setSyncStatus('syncing', '⏳ Connecting...');
-    const params = new URLSearchParams({
-      client_id: CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
-      response_type: 'token',
-      scope: SCOPES,
-      prompt: silent ? 'none' : 'consent'
-    });
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-  }
-
-  // ─── Try silent sign in on every open ────────────────────────────────
-  // Uses prompt=none — no popup, no redirect visible to user if already signed in
-  // Falls back gracefully if session expired
-  function trySilentSignIn() {
-    // Only attempt if user has signed in before on this device
-    const hasSigned = localStorage.getItem('mb_has_signed_in');
-    if (!hasSigned) return;
-
-    // Try silent auth — redirects back instantly with token if Google session active
-    startOAuthFlow(true);
-  }
-
-  // ─── Handle OAuth callback — reads token stored at page load ─────────
-  function handleOAuthCallback() {
-    const token = sessionStorage.getItem('mb_pending_token');
-    const error = sessionStorage.getItem('mb_pending_error');
-
-    sessionStorage.removeItem('mb_pending_token');
-    sessionStorage.removeItem('mb_pending_error');
-
-    if (error) {
-      // Silent sign in failed — session expired or not signed in
-      // Don't show any error — just stay in unsynced state silently
+  async function handleModalSync() {
+    const emailInput = document.getElementById('modal-sync-email-input');
+    if (!emailInput) return;
+    
+    const email = emailInput.value.trim();
+    if (!email) {
+      alert('Please enter your email address');
       return;
     }
 
-    if (token) {
-      accessToken = token;
-      // Mark that user has signed in on this device — enables future silent sign ins
-      localStorage.setItem('mb_has_signed_in', '1');
-      setSyncStatus('synced', '✓ Synced across devices');
-      syncFromDrive();
+    setSyncStatus('syncing', '⏳ Sending magic link...');
+    
+    try {
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email: email,
+        options: {
+          emailRedirectTo: 'https://hamzasaleem021.github.io/morning-brief/morning-brief.html'
+        }
+      });
+
+      if (error) throw error;
+      
+      setSyncStatus('email_sent', '✉️ Check your email for the sign-in link');
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setSyncStatus('error', '⚠ Sign in failed — try again');
     }
   }
 
-  // ─── Read config from Drive ───────────────────────────────────────────
-  async function syncFromDrive() {
-    setSyncStatus('syncing', '☁ Syncing...');
-    try {
-      // Find the config file in appDataFolder
-      const searchRes = await fetch(
-        `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${DRIVE_FILE}'&fields=files(id,name)`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      const searchData = await searchRes.json();
+  // ─── Check for existing session on load ──────────────────────────────
+  async function checkAuth() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    if (session) {
+      currentUser = session.user;
+      setSyncStatus('synced', '✓ Synced across devices');
+      await syncFromSupabase();
+    } else {
+      setSyncStatus('not_synced');
+    }
+  }
 
-      if (searchData.files && searchData.files.length > 0) {
-        // File exists — read it
-        driveFileId = searchData.files[0].id;
-        const fileRes = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const config = await fileRes.json();
-        applyDriveConfig(config);
+  // ─── Listen for auth state changes (magic link callback) ─────────────
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      setSyncStatus('synced', '✓ Synced across devices');
+      await syncFromSupabase();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      setSyncStatus('not_synced');
+    }
+  });
+
+  // ─── Read config from Supabase ────────────────────────────────────────
+  async function syncFromSupabase() {
+    if (!currentUser) return;
+    
+    setSyncStatus('syncing', '☁ Syncing...');
+    
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_configs')
+        .select('config_data')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        throw error;
+      }
+
+      if (data && data.config_data) {
+        applySupabaseConfig(data.config_data);
         setSyncStatus('synced', '✓ Synced');
       } else {
-        // No file yet — create one from current state
-        await saveToDrive();
+        // No config yet — save current state
+        await saveToSupabase();
         setSyncStatus('synced', '✓ Sync set up');
       }
-    } catch(e) {
-      console.warn('Drive sync error:', e);
+    } catch (e) {
+      console.error('Supabase sync error:', e);
       setSyncStatus('error', '⚠ Sync failed');
     }
   }
 
-  // ─── Apply config from Drive to app ──────────────────────────────────
-  function applyDriveConfig(config) {
+  // ─── Apply config from Supabase to app ───────────────────────────────
+  function applySupabaseConfig(config) {
     if (!config || !config.custom || !config.removed) return;
 
-    // Apply removed defaults from Drive
+    // Apply removed defaults from Supabase
     config.removed.forEach(id => {
       if (!getRemovedDefaults().includes(id)) {
         saveRemovedDefault(id);
@@ -1764,7 +1773,7 @@
       document.querySelector(`.source-nav-inner a[href="#${id}"]`)?.remove();
     });
 
-    // Apply custom sources from Drive
+    // Apply custom sources from Supabase
     config.custom.forEach(s => {
       if (!SOURCES.find(e => e.id === s.id)) {
         SOURCES.push(s);
@@ -1781,45 +1790,30 @@
       `${SOURCES.length} Source${SOURCES.length !== 1 ? 's' : ''}`;
   }
 
-  // ─── Save config to Drive ─────────────────────────────────────────────
-  async function saveToDrive() {
-    if (!accessToken) return; // not signed in — silently skip
+  // ─── Save config to Supabase ──────────────────────────────────────────
+  async function saveToSupabase() {
+    if (!currentUser) return; // not signed in — silently skip
+    
     const config = {
       custom: SOURCES.filter(s => s.custom),
       removed: getRemovedDefaults()
     };
-    const body = JSON.stringify(config);
 
     try {
-      if (driveFileId) {
-        // Update existing file
-        await fetch(
-          `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
-          {
-            method: 'PATCH',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body
-          }
-        );
-      } else {
-        // Create new file in appDataFolder
-        const meta = { name: DRIVE_FILE, parents: ['appDataFolder'] };
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
-        form.append('file', new Blob([body], { type: 'application/json' }));
-        const res = await fetch(
-          'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-          { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: form }
-        );
-        const data = await res.json();
-        driveFileId = data.id;
-      }
+      const { error} = await supabaseClient
+        .from('user_configs')
+        .upsert({
+          user_id: currentUser.id,
+          config_data: config
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) throw error;
+      
       setSyncStatus('synced', '✓ Synced');
-    } catch(e) {
-      console.warn('Drive save error:', e);
+    } catch (e) {
+      console.error('Supabase save error:', e);
       setSyncStatus('error', '⚠ Save failed');
     }
   }
@@ -1828,13 +1822,13 @@
   const _saveCustomSources = saveCustomSources;
   saveCustomSources = function() {
     _saveCustomSources();
-    saveToDrive();
+    saveToSupabase();
   };
 
   const _saveRemovedDefault = saveRemovedDefault;
   saveRemovedDefault = function(id) {
     _saveRemovedDefault(id);
-    saveToDrive();
+    saveToSupabase();
   };
 
   // ─── Init ──────────────────────────────────────────────────────────────
@@ -1843,14 +1837,9 @@
   loadCustomSources();
   applySourceOrder();
   reorderPageSections();
-  handleOAuthCallback(); // handles both silent and manual token returns
+  checkAuth(); // Check for existing Supabase session
   loadAll();
 
-  // Try silent sign in after app loads — non-blocking
-  // Only runs if user has signed in before on this device
-  setTimeout(() => {
-    if (!accessToken) trySilentSignIn();
-  }, 1500);
 
   // ─── Dark Mode ────────────────────────────────────────────────────────
   const THEME_KEY = 'morning_brief_theme';
