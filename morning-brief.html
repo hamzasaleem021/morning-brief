@@ -841,8 +841,8 @@
     }
   ];
 
-  // RSS proxy to avoid CORS
-  const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+  // Your personal Cloudflare Worker proxy — no third party dependency
+  const RSS_PROXY = 'https://morning-brief-proxy.hamzasaleem021.workers.dev/?url=';
 
   // ─── Date ──────────────────────────────────────────────────────────────
   function setDate() {
@@ -855,23 +855,50 @@
 
   // ─── Fetch RSS ─────────────────────────────────────────────────────────
   async function fetchRSS(source) {
-    // BUG 5 FIX: AbortSignal.timeout() not supported in older browsers
-    // Use manual AbortController + setTimeout instead
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     try {
-      const res = await fetch(`${RSS_PROXY}${encodeURIComponent(source.rss)}`, { signal: controller.signal });
+      const res = await fetch(`${RSS_PROXY}${encodeURIComponent(source.rss)}`, {
+        signal: controller.signal
+      });
       clearTimeout(timer);
       if (!res.ok) throw new Error('Network error');
-      const data = await res.json();
-      if (data.status !== 'ok' || !data.items?.length) throw new Error('No items');
-      return data.items.slice(0, 6).map(item => ({
-        title: item.title || 'Untitled',
-        date: item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
-        excerpt: stripHTML(item.description || item.content || '').slice(0, 180).trim() + '...',
-        url: item.link || source.fallback[0].url,
-        live: true
-      }));
+      const text = await res.text();
+
+      // Parse XML
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, 'application/xml');
+
+      // Support both RSS and Atom feeds
+      const isAtom = xml.querySelector('feed') !== null;
+      const items = isAtom
+        ? Array.from(xml.querySelectorAll('entry'))
+        : Array.from(xml.querySelectorAll('item'));
+
+      if (!items.length) throw new Error('No items');
+
+      return items.slice(0, 6).map(item => {
+        const title = isAtom
+          ? item.querySelector('title')?.textContent
+          : item.querySelector('title')?.textContent;
+        const link = isAtom
+          ? item.querySelector('link')?.getAttribute('href') || item.querySelector('link')?.textContent
+          : item.querySelector('link')?.textContent;
+        const pubDate = isAtom
+          ? item.querySelector('updated, published')?.textContent
+          : item.querySelector('pubDate')?.textContent;
+        const description = isAtom
+          ? item.querySelector('summary, content')?.textContent
+          : item.querySelector('description')?.textContent;
+
+        return {
+          title: title?.trim() || 'Untitled',
+          date: pubDate ? new Date(pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+          excerpt: stripHTML(description || '').slice(0, 180).trim() + '...',
+          url: link?.trim() || source.fallback[0].url,
+          live: true
+        };
+      });
     } catch (e) {
       clearTimeout(timer);
       return source.fallback.map(f => ({ ...f, live: false }));
