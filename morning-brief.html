@@ -1704,19 +1704,34 @@
 
   // ─── Check for existing session on load ──────────────────────────────
   async function checkAuth() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    
-    if (session) {
-      currentUser = session.user;
-      setSyncStatus('synced', '✓ Synced across devices');
-      await syncFromSupabase();
-    } else {
+    try {
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      
+      if (error) {
+        console.error('Session check error:', error);
+        setSyncStatus('not_synced');
+        return;
+      }
+      
+      if (session) {
+        currentUser = session.user;
+        console.log('User authenticated:', currentUser.email);
+        setSyncStatus('synced', '✓ Synced across devices');
+        await syncFromSupabase();
+      } else {
+        console.log('No active session');
+        setSyncStatus('not_synced');
+      }
+    } catch (e) {
+      console.error('Auth check failed:', e);
       setSyncStatus('not_synced');
     }
   }
 
   // ─── Listen for auth state changes (magic link callback) ─────────────
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    console.log('Auth state changed:', event, session?.user?.email);
+    
     if (event === 'SIGNED_IN' && session) {
       currentUser = session.user;
       setSyncStatus('synced', '✓ Synced across devices');
@@ -1724,13 +1739,19 @@
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       setSyncStatus('not_synced');
+    } else if (event === 'TOKEN_REFRESHED' && session) {
+      currentUser = session.user;
     }
   });
 
   // ─── Read config from Supabase ────────────────────────────────────────
   async function syncFromSupabase() {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('syncFromSupabase: No user, skipping');
+      return;
+    }
     
+    console.log('Syncing from Supabase for user:', currentUser.email);
     setSyncStatus('syncing', '☁ Syncing...');
     
     try {
@@ -1738,17 +1759,20 @@
         .from('user_configs')
         .select('config_data')
         .eq('user_id', currentUser.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid error on no rows
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error) {
+        console.error('Supabase select error:', error);
         throw error;
       }
 
       if (data && data.config_data) {
+        console.log('Config found, applying:', data.config_data);
         applySupabaseConfig(data.config_data);
         setSyncStatus('synced', '✓ Synced');
       } else {
         // No config yet — save current state
+        console.log('No config found, creating initial save');
         await saveToSupabase();
         setSyncStatus('synced', '✓ Sync set up');
       }
@@ -1793,25 +1817,35 @@
 
   // ─── Save config to Supabase ──────────────────────────────────────────
   async function saveToSupabase() {
-    if (!currentUser) return; // not signed in — silently skip
+    if (!currentUser) {
+      console.log('saveToSupabase: No user, skipping');
+      return; // not signed in — silently skip
+    }
     
     const config = {
       custom: SOURCES.filter(s => s.custom),
       removed: getRemovedDefaults()
     };
 
+    console.log('Saving to Supabase:', config);
+
     try {
-      const { error} = await supabaseClient
+      const { data, error } = await supabaseClient
         .from('user_configs')
         .upsert({
           user_id: currentUser.id,
           config_data: config
         }, {
           onConflict: 'user_id'
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        throw error;
+      }
       
+      console.log('Saved successfully:', data);
       setSyncStatus('synced', '✓ Synced');
     } catch (e) {
       console.error('Supabase save error:', e);
