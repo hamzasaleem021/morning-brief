@@ -1,4 +1,4 @@
-const CACHE = 'morning-brief-v5';
+const CACHE = 'morning-brief-v6';
 const ASSETS = ['./morning-brief.html'];
 
 self.addEventListener('install', e => {
@@ -18,8 +18,15 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Skip caching for non-GET requests (POST, PUT, etc.)
+  if (e.request.method !== 'GET') {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
   // Network first for external APIs — never cache these
   if (e.request.url.includes('workers.dev') ||
+      e.request.url.includes('supabase.co') ||
       e.request.url.includes('googleapis') ||
       e.request.url.includes('accounts.google') ||
       e.request.url.includes('fonts.googleapis') ||
