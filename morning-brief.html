@@ -1123,7 +1123,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
 <script>
   // ─── Supabase Configuration ───────────────────────────────────────────
   const SUPABASE_URL = 'https://byrvsttdxaaroospomhj.supabase.co';
@@ -1636,6 +1636,7 @@
 
   // ─── Supabase Sync ────────────────────────────────────────────────────
   let currentUser = null;
+  let isSyncing = false; // Prevent concurrent syncs
 
   function setSyncStatus(state, text) {
     const syncText = document.getElementById('modal-sync-text');
@@ -1729,19 +1730,27 @@
   }
 
   // ─── Listen for auth state changes (magic link callback) ─────────────
+  let authChangeTimeout = null;
+  
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     console.log('Auth state changed:', event, session?.user?.email);
     
-    if (event === 'SIGNED_IN' && session) {
-      currentUser = session.user;
-      setSyncStatus('synced', '✓ Synced across devices');
-      await syncFromSupabase();
-    } else if (event === 'SIGNED_OUT') {
-      currentUser = null;
-      setSyncStatus('not_synced');
-    } else if (event === 'TOKEN_REFRESHED' && session) {
-      currentUser = session.user;
-    }
+    // Debounce rapid auth changes
+    if (authChangeTimeout) clearTimeout(authChangeTimeout);
+    
+    authChangeTimeout = setTimeout(async () => {
+      if (event === 'SIGNED_IN' && session) {
+        currentUser = session.user;
+        setSyncStatus('synced', '✓ Synced across devices');
+        await syncFromSupabase();
+      } else if (event === 'SIGNED_OUT') {
+        currentUser = null;
+        setSyncStatus('not_synced');
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        currentUser = session.user;
+        // Don't sync on token refresh, just update user
+      }
+    }, 300); // Wait 300ms for auth state to settle
   });
 
   // ─── Read config from Supabase ────────────────────────────────────────
@@ -1750,7 +1759,13 @@
       console.log('syncFromSupabase: No user, skipping');
       return;
     }
+
+    if (isSyncing) {
+      console.log('syncFromSupabase: Already syncing, skipping');
+      return;
+    }
     
+    isSyncing = true;
     console.log('Syncing from Supabase for user:', currentUser.email);
     setSyncStatus('syncing', '☁ Syncing...');
     
@@ -1779,6 +1794,8 @@
     } catch (e) {
       console.error('Supabase sync error:', e);
       setSyncStatus('error', '⚠ Sync failed');
+    } finally {
+      isSyncing = false;
     }
   }
 
