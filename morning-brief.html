@@ -1736,6 +1736,7 @@
         currentUser = session.user;
         console.log('User authenticated:', currentUser.email);
         setSyncStatus('synced', '✓ Synced across devices');
+        setupRealtimeSync(); // Set up Realtime listener
         await syncFromSupabase();
       } else {
         console.log('No active session');
@@ -1760,9 +1761,14 @@
       if (event === 'SIGNED_IN' && session) {
         currentUser = session.user;
         setSyncStatus('synced', '✓ Synced across devices');
+        setupRealtimeSync(); // Set up Realtime listener
         await syncFromSupabase();
       } else if (event === 'SIGNED_OUT') {
         currentUser = null;
+        if (realtimeChannel) {
+          await supabaseClient.removeChannel(realtimeChannel);
+          realtimeChannel = null;
+        }
         setSyncStatus('not_synced');
       } else if (event === 'TOKEN_REFRESHED' && session) {
         currentUser = session.user;
@@ -1788,11 +1794,18 @@
     setSyncStatus('syncing', '☁ Syncing...');
     
     try {
+      // Use Realtime channel to fetch data instead of REST
+      const channel = supabaseClient.channel('sync-fetch');
+      
+      // Fetch using Realtime Postgres Changes
       const { data, error } = await supabaseClient
         .from('user_configs')
         .select('config_data')
         .eq('user_id', currentUser.id)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid error on no rows
+        .maybeSingle();
+
+      // Clean up channel
+      await supabaseClient.removeChannel(channel);
 
       if (error) {
         console.error('Supabase select error:', error);
@@ -1815,6 +1828,37 @@
     } finally {
       isSyncing = false;
     }
+  }
+
+  // ─── Subscribe to Realtime changes ────────────────────────────────────
+  let realtimeChannel = null;
+  
+  function setupRealtimeSync() {
+    if (!currentUser || realtimeChannel) return;
+    
+    console.log('Setting up Realtime sync for user:', currentUser.email);
+    
+    // Subscribe to changes on user_configs table
+    realtimeChannel = supabaseClient
+      .channel('db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_configs',
+          filter: `user_id=eq.${currentUser.id}`
+        },
+        (payload) => {
+          console.log('Realtime change detected:', payload);
+          if (payload.new && payload.new.config_data) {
+            applySupabaseConfig(payload.new.config_data);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
   }
 
   // ─── Apply config from Supabase to app ───────────────────────────────
