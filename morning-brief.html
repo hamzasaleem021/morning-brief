@@ -1149,60 +1149,7 @@
     }
   });
   // ─── Sources Config ────────────────────────────────────────────────────
-  const SOURCES = [
-    {
-      id: 'seth',
-      name: 'Seth Godin',
-      domain: 'seths.blog',
-      color: '#2a5c8a',
-      rss: 'https://seths.blog/feed/atom',
-      fallback: [
-        { title: "The Practice of Showing Up", date: "Mar 2025", excerpt: "Shipping creative work isn't about waiting for perfect conditions. It's about the practice — the daily commitment to making something worth making.", url: "https://seths.blog" },
-        { title: "What the Market Wants", date: "Mar 2025", excerpt: "The market doesn't always know what it wants until you show it. The job of the creator is to lead, not follow the existing demand curve.", url: "https://seths.blog" },
-        { title: "Enrollment vs. Compliance", date: "Feb 2025", excerpt: "People who are enrolled in an idea will do more, persist longer, and create better outcomes than those who simply comply.", url: "https://seths.blog" },
-        { title: "The Narrative We Tell", date: "Feb 2025", excerpt: "Every decision is preceded by a story. The story we tell ourselves about why we do what we do shapes everything that follows.", url: "https://seths.blog" },
-      ]
-    },
-    {
-      id: 'yc',
-      name: 'YC Library',
-      domain: 'ycombinator.com/library',
-      color: '#e85d04',
-      rss: 'https://www.ycombinator.com/blog/rss',
-      fallback: [
-        { title: "Default Alive or Default Dead?", date: "Paul Graham", excerpt: "The most important question for a startup is whether it's default alive — does the current trajectory lead to profitability before running out of money?", url: "https://www.ycombinator.com/library" },
-        { title: "Do Things That Don't Scale", date: "Paul Graham", excerpt: "Startups that succeed often start by doing things manually that they later automate. The insight is that this manual work teaches you things automation never would.", url: "https://www.ycombinator.com/library" },
-        { title: "How to Get Startup Ideas", date: "Paul Graham", excerpt: "The best startup ideas come from noticing problems in your own life. You're in a better position than you think to spot what's missing.", url: "https://www.ycombinator.com/library" },
-        { title: "Startups in 13 Sentences", date: "Paul Graham", excerpt: "Pick good cofounders. Launch fast. Let your idea evolve. Understand your users. Better to make a few people love you than many like you.", url: "https://www.ycombinator.com/library" },
-      ]
-    },
-    {
-      id: 'fs',
-      name: 'Farnam Street',
-      domain: 'fs.blog',
-      color: '#2d6a4f',
-      rss: 'https://fs.blog/feed/',
-      fallback: [
-        { title: "The Map Is Not the Territory", date: "Mental Models", excerpt: "The models we use to understand reality are not reality itself. Knowing the difference between the map and territory is one of the most important thinking skills.", url: "https://fs.blog" },
-        { title: "First Principles Thinking", date: "Mental Models", excerpt: "Breaking down complex problems to their fundamental truths and building up from there. Most people reason by analogy; first principles thinkers rebuild from scratch.", url: "https://fs.blog" },
-        { title: "The Feynman Technique", date: "Learning", excerpt: "If you can't explain it simply, you don't understand it well enough. Teaching forces the gaps in your knowledge to surface immediately.", url: "https://fs.blog" },
-        { title: "Inversion: The Power of Thinking Backwards", date: "Mental Models", excerpt: "Instead of asking how to achieve something, ask what would guarantee failure. Avoiding stupidity is easier than trying to be brilliant.", url: "https://fs.blog" },
-      ]
-    },
-    {
-      id: 'pg',
-      name: 'The Diff',
-      domain: 'thediff.co',
-      color: '#bf4f00',
-      rss: 'https://www.thediff.co/feed',
-      fallback: [
-        { title: "The Diff: Finance, Business & Macro", date: "Recent", excerpt: "The Diff covers business strategy, finance, and macro economics with an analytical edge. Written by Byrne Hobart.", url: "https://www.thediff.co" },
-        { title: "Markets, Media, and Monopoly", date: "Recent", excerpt: "How platform economics and media dynamics interact to create winner-take-all outcomes in modern markets.", url: "https://www.thediff.co" },
-        { title: "The Leverage Cycle", date: "Recent", excerpt: "Understanding how leverage builds and unwinds across financial systems — and why it matters for every investor.", url: "https://www.thediff.co" },
-        { title: "Optionality and Its Discontents", date: "Recent", excerpt: "Keeping your options open has a cost that compounds quietly over time. The best decisions often eliminate options.", url: "https://www.thediff.co" },
-      ]
-    }
-  ];
+  const SOURCES = []; // Start empty - users add their own sources
 
   // Your personal Cloudflare Worker proxy — no third party dependency
   const RSS_PROXY = 'https://morning-brief-proxy.hamzasaleem021.workers.dev/?url=';
@@ -1809,9 +1756,10 @@
         } else {
           throw error;
         }
-      } else if (data && data.config_data) {
-        console.log('Config found, applying:', data.config_data);
-        applySupabaseConfig(data.config_data);
+      } else if (data && data.length > 0 && data[0].config_data) {
+        // RPC returns array of rows, get first row
+        console.log('Config found, applying:', data[0].config_data);
+        applySupabaseConfig(data[0].config_data);
         setSyncStatus('synced', '✓ Synced');
       } else {
         // No config yet — save current state
