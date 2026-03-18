@@ -1129,7 +1129,25 @@
   const SUPABASE_URL = 'https://byrvsttdxaaroospomhj.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_E0u4n_rdwtjJfQsv0Pr8BQ_qznLBwd4';
   const { createClient } = supabase;
-  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+  
+  // Create client with cache-busting and fresh connection settings
+  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'X-Client-Version': Date.now().toString() // Cache buster
+      }
+    },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
   // ─── Sources Config ────────────────────────────────────────────────────
   const SOURCES = [
     {
