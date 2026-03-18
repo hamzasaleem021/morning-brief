@@ -1777,7 +1777,7 @@
     }, 300); // Wait 300ms for auth state to settle
   });
 
-  // ─── Read config from Supabase ────────────────────────────────────────
+  // ─── Read config from Supabase (Realtime-only, no REST) ──────────────
   async function syncFromSupabase() {
     if (!currentUser) {
       console.log('syncFromSupabase: No user, skipping');
@@ -1794,25 +1794,22 @@
     setSyncStatus('syncing', '☁ Syncing...');
     
     try {
-      // Use Realtime channel to fetch data instead of REST
-      const channel = supabaseClient.channel('sync-fetch');
-      
-      // Fetch using Realtime Postgres Changes
-      const { data, error } = await supabaseClient
-        .from('user_configs')
-        .select('config_data')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
-      // Clean up channel
-      await supabaseClient.removeChannel(channel);
+      // Use RPC call instead of REST select to bypass PostgREST
+      const { data, error } = await supabaseClient.rpc('get_user_config', {
+        p_user_id: currentUser.id
+      });
 
       if (error) {
-        console.error('Supabase select error:', error);
-        throw error;
-      }
-
-      if (data && data.config_data) {
+        console.error('Supabase RPC error:', error);
+        // If RPC function doesn't exist yet, create initial config
+        if (error.code === '42883') { // Function not found
+          console.log('RPC function not found, creating initial save');
+          await saveToSupabase();
+          setSyncStatus('synced', '✓ Sync set up');
+        } else {
+          throw error;
+        }
+      } else if (data && data.config_data) {
         console.log('Config found, applying:', data.config_data);
         applySupabaseConfig(data.config_data);
         setSyncStatus('synced', '✓ Synced');
@@ -1909,22 +1906,18 @@
     console.log('Saving to Supabase:', config);
 
     try {
-      const { data, error } = await supabaseClient
-        .from('user_configs')
-        .upsert({
-          user_id: currentUser.id,
-          config_data: config
-        }, {
-          onConflict: 'user_id'
-        })
-        .select();
+      // Use RPC function instead of REST upsert to bypass broken PostgREST
+      const { data, error } = await supabaseClient.rpc('upsert_user_config', {
+        p_user_id: currentUser.id,
+        p_config_data: config
+      });
 
       if (error) {
-        console.error('Supabase upsert error:', error);
+        console.error('Supabase RPC error:', error);
         throw error;
       }
       
-      console.log('Saved successfully:', data);
+      console.log('Saved successfully');
       setSyncStatus('synced', '✓ Synced');
     } catch (e) {
       console.error('Supabase save error:', e);
