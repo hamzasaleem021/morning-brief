@@ -901,11 +901,40 @@ const Sync = (() => {
 const Analytics = (() => {
   let initialized = false;
   
+  // Wait for Amplitude SDK to fully load
+  function waitForAmplitude() {
+    return new Promise((resolve) => {
+      if (typeof amplitude !== 'undefined' && amplitude.init) {
+        resolve();
+        return;
+      }
+      
+      // Poll every 100ms for up to 5 seconds
+      let attempts = 0;
+      const maxAttempts = 50;
+      const interval = setInterval(() => {
+        attempts++;
+        if (typeof amplitude !== 'undefined' && amplitude.init) {
+          clearInterval(interval);
+          resolve();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          console.warn('Amplitude SDK failed to load after 5 seconds');
+          resolve(); // Resolve anyway to not block the app
+        }
+      }, 100);
+    });
+  }
+  
   return {
-    init() {
+    async init() {
       if (initialized) return;
-      if (typeof amplitude === 'undefined') {
-        console.warn('Amplitude SDK not loaded');
+      
+      // Wait for SDK to load
+      await waitForAmplitude();
+      
+      if (typeof amplitude === 'undefined' || !amplitude.init) {
+        console.warn('Amplitude SDK not available');
         return;
       }
       
@@ -1575,7 +1604,7 @@ window.addEventListener('appinstalled', () => {
 
   // 3. Initialize Analytics (after loading cache so source_count is accurate)
   if (!Analytics.isOptedOut()) {
-    Analytics.init();
+    await Analytics.init();
     Analytics.track('app_opened', {
       source_count: State.getCount(),
       theme: localStorage.getItem(THEME_KEY) || 'auto',
