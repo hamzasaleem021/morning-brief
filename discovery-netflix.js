@@ -32,7 +32,6 @@
 .discovery-title { font-family: var(--display); font-size: 1.3rem; font-weight: 600; color: var(--ink); }
 .discovery-close { width: 32px; height: 32px; border: none; background: transparent; color: var(--ink-muted); cursor: pointer; font-size: 1.5rem; line-height: 1; transition: color 0.15s; }
 .discovery-close:hover { color: var(--ink); }
-.discovery-close:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Stats Bar */
 .discovery-stats { padding: 16px 24px; background: var(--bg); border-bottom: 1px solid var(--rule); display: flex; gap: 16px; }
@@ -75,10 +74,8 @@
 /* Source Card */
 .source-card { flex: 0 0 180px; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px; }
 .source-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.source-card:focus { outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
 .source-card.added { opacity: 0.6; cursor: not-allowed; }
 .source-card.added:hover { transform: none; box-shadow: none; border-color: var(--rule); }
-.source-card.added:focus { outline: 1px solid var(--rule); }
 .source-name { font-size: 0.9rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-height: 38px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .source-domain { font-size: 0.75rem; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .add-btn { margin-top: auto; padding: 8px 12px; background: var(--accent); border: none; border-radius: 6px; color: white; font-family: var(--body); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s; }
@@ -172,46 +169,43 @@
     modal.id = 'discovery-modal';
     
     modal.innerHTML = `
-      <div class="discovery-container" role="dialog" aria-labelledby="discovery-title" aria-modal="true">
+      <div class="discovery-container">
         <div class="discovery-header">
-          <h2 class="discovery-title" id="discovery-title">Discover Sources</h2>
-          <button class="discovery-close" 
-                  onclick="window.closeDiscovery()"
-                  aria-label="Close discovery modal">&times;</button>
+          <h2 class="discovery-title">Discover Sources</h2>
+          <button class="discovery-close" onclick="window.closeDiscovery()">&times;</button>
         </div>
         
-        <div class="discovery-stats" role="status" aria-live="polite">
+        <div class="discovery-stats">
           <div class="stat-item">
             <div class="stat-label">Categories</div>
-            <div class="stat-value" id="stat-categories" aria-label="Total categories available">0</div>
+            <div class="stat-value" id="stat-categories">0</div>
           </div>
           <div class="stat-item">
             <div class="stat-label">Total Sources</div>
-            <div class="stat-value" id="stat-sources" aria-label="Total sources available">0</div>
+            <div class="stat-value" id="stat-sources">0</div>
           </div>
           <div class="stat-item">
             <div class="stat-label">Your Sources</div>
-            <div class="stat-value" id="stat-yours" aria-label="Your current source count">0/20</div>
+            <div class="stat-value" id="stat-yours">0/20</div>
           </div>
         </div>
         
         <div class="discovery-search">
           <div class="search-container">
-            <span class="search-icon" aria-hidden="true">🔍</span>
+            <span class="search-icon">🔍</span>
             <input 
               type="text" 
               class="search-input" 
               id="category-search"
               placeholder="Filter categories..."
               autocomplete="off"
-              aria-label="Search and filter categories"
             >
           </div>
         </div>
         
-        <div class="discovery-content" id="discovery-content" role="main">
+        <div class="discovery-content" id="discovery-content">
           <div class="discovery-loading">
-            <div class="spinner" aria-hidden="true"></div>
+            <div class="spinner"></div>
             <p>Loading categories...</p>
           </div>
         </div>
@@ -281,24 +275,14 @@
 
   function renderSourceCard(source, category) {
     var added = isSourceAlreadyAdded(source.url);
-    var ariaLabel = added 
-      ? `${source.name} already added to your sources`
-      : `Add ${source.name} to your sources. Press Enter to add.`;
     
     return `
       <div class="source-card ${added ? 'added' : ''}" 
            data-source-url="${escapeHtml(source.url)}" 
-           tabindex="${added ? '-1' : '0'}"
-           role="button"
-           aria-label="${escapeHtml(ariaLabel)}"
-           aria-pressed="${added ? 'true' : 'false'}"
-           onclick="window.addFromDiscovery('${escapeHtml(source.name)}', '${escapeHtml(source.url)}', '${escapeHtml(category)}')"
-           onkeydown="if(event.key==='Enter' && !this.classList.contains('added')) { event.preventDefault(); this.click(); }">
+           onclick="window.addFromDiscovery('${escapeHtml(source.name)}', '${escapeHtml(source.url)}', '${escapeHtml(category)}')">
         <div class="source-name">${escapeHtml(source.name)}</div>
         <div class="source-domain">${escapeHtml(source.domain)}</div>
         <button class="add-btn ${added ? 'added' : ''}" 
-                aria-hidden="true"
-                tabindex="-1"
                 onclick="event.stopPropagation();">
           ${added ? '✓ Added' : '+ Add'}
         </button>
