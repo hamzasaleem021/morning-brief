@@ -72,9 +72,9 @@
 .sources-scroll::after { content: ''; position: absolute; right: 0; top: 0; bottom: 8px; width: 80px; background: linear-gradient(to right, transparent, var(--bg) 70%); pointer-events: none; }
 
 /* Source Card */
-.source-card { flex: 0 0 180px; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px; }
+.source-card { flex: 0 0 180px; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px; }
 .source-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.source-card.added { opacity: 0.6; cursor: not-allowed; }
+.source-card.added { opacity: 0.6; }
 .source-card.added:hover { transform: none; box-shadow: none; border-color: var(--rule); }
 .source-name { font-size: 0.9rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-height: 38px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .source-domain { font-size: 0.75rem; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -278,12 +278,11 @@
     
     return `
       <div class="source-card ${added ? 'added' : ''}" 
-           data-source-url="${escapeHtml(source.url)}" 
-           onclick="window.addFromDiscovery('${escapeHtml(source.name)}', '${escapeHtml(source.url)}', '${escapeHtml(category)}')">
+           data-source-url="${escapeHtml(source.url)}">
         <div class="source-name">${escapeHtml(source.name)}</div>
         <div class="source-domain">${escapeHtml(source.domain)}</div>
         <button class="add-btn ${added ? 'added' : ''}" 
-                onclick="event.stopPropagation();">
+                onclick="window.addFromDiscovery('${escapeHtml(source.name)}', '${escapeHtml(source.url)}', '${escapeHtml(category)}')">
           ${added ? '✓ Added' : '+ Add'}
         </button>
       </div>
