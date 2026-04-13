@@ -1,5 +1,9 @@
-const CACHE = 'morning-brief-v7';
-const ASSETS = ['./morning-brief.html'];
+const CACHE = 'morning-brief-v8'; // ← UPDATED: Bumped from v7 to v8
+const ASSETS = [
+  './morning-brief.html',
+  './discovery-sources.json',  // ← NEW: Cache the sources
+  './discovery-auto.js'         // ← NEW: Cache the script
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -36,6 +40,7 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
+  
   // Cache first for app shell
   e.respondWith(
     caches.match(e.request).then(cached => {
