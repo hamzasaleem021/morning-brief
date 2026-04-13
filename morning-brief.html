@@ -562,9 +562,14 @@ return n._iq[e]={_q:[]},v(n._iq[e]),n._iq[e]};e.amplitude=n})(window,document);
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
     <div class="modal-header">
-      <h2>Manage Sources</h2>
-      <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">✕</button>
-    </div>
+  <h2>Manage Sources</h2>
+  <div style="display: flex; gap: 12px; align-items: center;">
+    <button onclick="openDiscovery()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; cursor: pointer;">
+      🔍 Discover
+    </button>
+    <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">✕</button>
+  </div>
+</div>
     <div class="modal-body">
       <div class="sync-bar" id="sync-bar">
         <div class="sync-bar-row">
@@ -1625,6 +1630,6 @@ window.addEventListener('appinstalled', () => {
   }
 })();
 </script>
-<script src="./discovery-auto.js"></script>
+<script src="./discovery-netflix.js"></script>
 </body>
 </html>
