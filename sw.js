@@ -1,0 +1,54 @@
+const CACHE = 'morning-brief-v8';
+const ASSETS = [
+  './morning-brief.html',
+  './discovery-sources.json',
+  './discovery-netflix.js'  // FIXED: Changed from discovery-auto.js
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  // Skip caching for non-GET requests (POST, PUT, etc.)
+  if (e.request.method !== 'GET') {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Network first for external APIs — never cache these
+  if (e.request.url.includes('workers.dev') ||
+      e.request.url.includes('supabase.co') ||
+      e.request.url.includes('googleapis') ||
+      e.request.url.includes('accounts.google') ||
+      e.request.url.includes('fonts.googleapis') ||
+      e.request.url.includes('fonts.gstatic')) {
+    e.respondWith(
+      fetch(e.request).catch(() => new Response('Offline', { status: 503 }))
+    );
+    return;
+  }
+  
+  // Cache first for app shell
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      return cached || fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      });
+    }).catch(() => caches.match('./morning-brief.html'))
+  );
+});
