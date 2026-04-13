@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-// DISCOVERY FEATURE - NETFLIX-STYLE BROWSE
+// DISCOVERY FEATURE - NETFLIX-STYLE BROWSE v2.0 (ES5 Compatible)
 // Simple category-based browsing with horizontal scroll
 // ═══════════════════════════════════════════════════════════════════════
 
