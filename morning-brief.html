@@ -340,6 +340,7 @@ return n._iq[e]={_q:[]},v(n._iq[e]),n._iq[e]};e.amplitude=n})(window,document);
   }
   .step-text { font-size: 0.88rem; color: var(--ink-light); line-height: 1.6; }
   .step-text strong { color: var(--ink); font-weight: 500; }
+  .step-optional { color: var(--ink-muted); font-size: 0.82rem; font-style: italic; }
   .welcome-cta {
     display: inline-flex; align-items: center; gap: 8px;
     background: var(--ink); color: var(--paper); border: none; border-radius: 20px;
@@ -427,9 +428,6 @@ return n._iq[e]={_q:[]},v(n._iq[e]),n._iq[e]};e.amplitude=n})(window,document);
   .form-input::placeholder { color: var(--ink-muted); }
   .btn-add-source { background: var(--ink); border: none; border-radius: 6px; color: var(--paper); font-family: var(--body); font-size: 0.82rem; font-weight: 500; padding: 8px 16px; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
   .btn-add-source:hover { background: var(--accent); }
-
-  .cors-note { font-size: 0.72rem; color: var(--ink-muted); line-height: 1.6; margin-top: 16px; padding: 12px 14px; background: var(--accent-soft); border-radius: 6px; }
-  .cors-note strong { color: var(--accent); }
 
   /* ── Sync bar in modal ── */
   .sync-bar { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: var(--accent-soft); border-radius: 8px; margin-bottom: 16px; font-size: 0.78rem; }
@@ -776,9 +774,6 @@ return n._iq[e]={_q:[]},v(n._iq[e]),n._iq[e]};e.amplitude=n})(window,document);
           <input type="text" class="form-input" id="new-source-url" placeholder="RSS feed URL (e.g. https://theverge.com/rss/index.xml)">
           <button class="btn-add-source" onclick="addSource()">Add</button>
         </div>
-      </div>
-      <div class="cors-note">
-        <strong>About fetching:</strong> Morning Brief fetches RSS feeds through your personal Cloudflare Worker — a private relay you own and control. Your sync settings are stored securely in your private Supabase database. Nothing is shared, sold, or tracked.
       </div>
     </div>
   </div>
@@ -1308,42 +1303,35 @@ const UI = (() => {
     return `
       <div class="welcome-state" id="welcome-state">
         <div class="welcome-icon">☕</div>
-        <h2 class="welcome-headline">Your mind is worth protecting.</h2>
-        <p class="welcome-subhead">Begin with intention, not noise.</p>
+        <h2 class="welcome-headline">A quieter way to read the web.</h2>
+        <p class="welcome-subhead">Your sources. Your signal. Every morning.</p>
 
         <div class="welcome-philosophy">
-          <p>We live in an age of infinite scroll — designed not to inform you, but to capture you. Every notification, every trending topic, every algorithmically ranked feed is optimised for one thing: keeping your attention hostage.</p>
-
-          <blockquote>
-            "Almost everything will work again if you unplug it for a few minutes — including you."
-            <cite>— Anne Lamott</cite>
-          </blockquote>
-
-          <p>Sensory overload is not a personality trait. It is the predictable result of a system built to overwhelm. The antidote is not disconnection — it is curation. Choosing what enters your mind with the same care you choose what enters your body.</p>
+          <p>Morning Brief is a reader for the feeds <em>you</em> choose — up to twenty of them. No algorithm ranks what you see. No engagement metric decides what matters. Just the writers and publications you trust, fetched fresh, every time you open the app.</p>
 
           <blockquote>
             "The ability to simplify means to eliminate the unnecessary so that the necessary may speak."
             <cite>— Hans Hofmann</cite>
           </blockquote>
-
-          <p>Morning Brief exists for one purpose: to give you only the sources you trust, nothing more. No algorithm decides what you see. No engagement metric ranks what matters. Just the writers and thinkers you chose — delivered cleanly, every morning.</p>
-
-          <p>Add your first source below and begin building a reading diet that respects your attention.</p>
         </div>
 
         <div class="welcome-steps">
-          <h3>How it works</h3>
+          <h3>Get started in a minute</h3>
           <div class="welcome-step">
             <div class="step-num">1</div>
-            <div class="step-text"><strong>Find an RSS feed URL</strong> from any blog, newsletter, or publication you trust. Most sites have one — look for an RSS icon or add <code>/feed</code> or <code>/rss</code> to the domain.</div>
+            <div class="step-text"><strong>Pick your sources.</strong> Open <em>Manage Sources</em> and tap <em>Discover</em> to browse over a thousand curated feeds across 67 categories — or paste any RSS URL you already have.</div>
           </div>
           <div class="welcome-step">
             <div class="step-num">2</div>
-            <div class="step-text"><strong>Add it here</strong> via Manage Sources. Give it a name. It appears instantly.</div>
+            <div class="step-text"><strong>Read.</strong> Each source gets its own section with the latest posts. Pull-to-refresh or tap <em>Refresh</em> any time.</div>
           </div>
           <div class="welcome-step">
             <div class="step-num">3</div>
-            <div class="step-text"><strong>Sign in with your email</strong> to sync your sources across every device you own. One list, everywhere, always.</div>
+            <div class="step-text"><strong>Sync across devices</strong> <span class="step-optional">(optional)</span>. Sign in with a magic link — no password, ever. Your list travels with you. Nothing else is stored.</div>
+          </div>
+          <div class="welcome-step">
+            <div class="step-num">4</div>
+            <div class="step-text"><strong>Install it.</strong> Tap <em>Install App</em> to add Morning Brief to your home screen. Works offline once it's in.</div>
           </div>
         </div>
 
