@@ -1,15 +1,15 @@
-const CACHE = 'morning-brief-v8';
+const CACHE = 'morning-brief-v9';
 const ASSETS = [
   './morning-brief.html',
   './discovery-sources.json',
-  './discovery-netflix.js'  // FIXED: Changed from discovery-auto.js
+  './discovery-netflix.js'
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(ASSETS))
+    // Note: we intentionally do NOT call skipWaiting() here.
+    // The page detects the waiting SW and prompts the user to reload.
   );
 });
 
@@ -19,6 +19,13 @@ self.addEventListener('activate', e => {
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+// Page-initiated update: the page sends this after user confirms the reload toast.
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', e => {
@@ -40,7 +47,7 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  
+
   // Cache first for app shell
   e.respondWith(
     caches.match(e.request).then(cached => {

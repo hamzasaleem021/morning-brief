@@ -7,7 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Morning Brief">
-<meta name="theme-color" content="#f5f0e8">
+<meta name="theme-color" content="#f5f0e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141210" media="(prefers-color-scheme: dark)">
 <meta name="description" content="Your sources. Your signal. Every morning.">
 <link rel="manifest" href="./manifest.json">
 <title>Morning Brief</title>
@@ -486,6 +487,191 @@ return n._iq[e]={_q:[]},v(n._iq[e]),n._iq[e]};e.amplitude=n})(window,document);
     .masthead h1 { font-size: 2rem; }
     .masthead-rule { display: none; }
   }
+
+  /* ── Toast (non-blocking notice) ─────────────────────────────────── */
+  .mb-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--body);
+    font-size: 0.85rem;
+    padding: 10px 18px;
+    border-radius: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 10001;
+    max-width: calc(100vw - 32px);
+    text-align: center;
+  }
+  .mb-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Confirm dialog ──────────────────────────────────────────────── */
+  .mb-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 10002;
+    padding: 16px;
+  }
+  .mb-confirm-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .mb-confirm-box {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .mb-confirm-msg {
+    margin: 0 0 18px;
+    font-family: var(--body);
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  .mb-confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .mb-confirm-actions button {
+    font-family: var(--body);
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .mb-confirm-actions button:focus { outline: none; }
+  .mb-confirm-actions button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .mb-confirm-cancel:hover { background: var(--bg); }
+  .mb-confirm-ok {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .mb-confirm-ok:hover { filter: brightness(1.05); }
+  .mb-confirm-ok:focus-visible {
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  /* ── Per-source feed error + retry ────────────────────────────────── */
+  .feed-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    background: var(--bg);
+    border: 1px dashed var(--rule);
+    border-radius: 6px;
+  }
+  .feed-retry {
+    font-family: var(--body);
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .feed-retry:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  /* ── Modal source-remove button ──────────────────────────────────── */
+  .source-remove-btn {
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .source-remove-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* ── SW update prompt ────────────────────────────────────────────── */
+  .mb-update-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--body);
+    font-size: 0.85rem;
+    padding: 10px 14px 10px 18px;
+    border-radius: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 10001;
+    max-width: calc(100vw - 32px);
+  }
+  .mb-update-toast.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .mb-update-reload {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: var(--body);
+  }
+  .mb-update-reload:hover { filter: brightness(1.08); }
+  .mb-update-dismiss {
+    background: transparent;
+    color: var(--paper);
+    border: none;
+    font-size: 0.95rem;
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 2px 6px;
+  }
+  .mb-update-dismiss:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -545,7 +731,7 @@ return n._iq[e]={_q:[]},v(n._iq[e]),n._iq[e]};e.amplitude=n})(window,document);
 <!-- Main content -->
 <div class="main" id="main-content">
   <div class="error-notice" id="error-notice">
-    <strong>Note:</strong> One or more feeds couldn't be fetched. Sample posts are shown — live content will load once the feed becomes available.
+    <strong>Note:</strong> One or more feeds couldn't be fetched. Use the <em>Retry</em> button on each section, or <em>Refresh</em> to try everything again.
   </div>
   <!-- Source sections injected here by UI layer -->
 </div>
@@ -613,6 +799,30 @@ const STORAGE_KEY    = 'morning_brief_sources';
 const ORDER_KEY      = 'morning_brief_order';
 const THEME_KEY      = 'morning_brief_theme';
 const COLORS         = ['#c0392b','#16a085','#8e44ad','#d35400','#27ae60','#2980b9','#b7791f','#f39c12'];
+const MAX_SOURCES    = 20;
+const FETCH_TIMEOUT  = 5000;
+const FETCH_CONCURRENCY = 5;
+
+// ─────────────────────────────────────────────────────────────────────────
+// Supabase Row Level Security note — READ THIS if self-hosting
+// The `sb_publishable_` key below is safe to ship in frontend JS ONLY if
+// RLS is enabled on the `user_configs` table. Run this SQL in your Supabase
+// SQL editor to enforce that each row is readable/writable only by its owner:
+//
+//   alter table public.user_configs enable row level security;
+//   create policy "users read own config"
+//     on public.user_configs for select
+//     using (auth.uid() = user_id);
+//   create policy "users upsert own config"
+//     on public.user_configs for insert
+//     with check (auth.uid() = user_id);
+//   create policy "users update own config"
+//     on public.user_configs for update
+//     using (auth.uid() = user_id);
+//
+// Verify in Dashboard → Authentication → Policies that all 3 exist.
+// Without RLS, any visitor can read every user's source list.
+// ─────────────────────────────────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════════════════════
 // LAYER 1 — STATE
@@ -634,11 +844,14 @@ const State = (() => {
     },
 
     // Add a single source — called by UI actions
+    // Returns { ok: true } on success, or { ok: false, reason: 'duplicate_id' | 'duplicate_rss' | 'limit' }
     addSource(source) {
-      if (_sources.find(s => s.id === source.id)) return false;
+      if (_sources.length >= MAX_SOURCES) return { ok: false, reason: 'limit' };
+      if (_sources.find(s => s.id === source.id)) return { ok: false, reason: 'duplicate_id' };
+      if (_sources.find(s => s.rss === source.rss)) return { ok: false, reason: 'duplicate_rss' };
       _sources.push({ ...source });
       _colorIndex = (_colorIndex + 1) % COLORS.length;
-      return true;
+      return { ok: true };
     },
 
     // Remove a single source — called by UI actions
@@ -1013,6 +1226,83 @@ const UI = (() => {
     return d.textContent || d.innerText || '';
   }
 
+  // ── Toast (replaces alert for non-blocking notices) ──────────────────
+  let toastTimer = null;
+  function showToast(msg, duration = 2800) {
+    let el = document.getElementById('mb-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'mb-toast';
+      el.className = 'mb-toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('visible');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('visible'), duration);
+  }
+
+  // ── Confirm dialog (replaces confirm() — async, returns Promise<bool>) ─
+  function confirmDialog(message, { okText = 'Confirm', cancelText = 'Cancel' } = {}) {
+    return new Promise(resolve => {
+      let overlay = document.getElementById('mb-confirm');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'mb-confirm';
+        overlay.className = 'mb-confirm-overlay';
+        overlay.innerHTML = `
+          <div class="mb-confirm-box" role="dialog" aria-modal="true" aria-labelledby="mb-confirm-msg">
+            <p id="mb-confirm-msg" class="mb-confirm-msg"></p>
+            <div class="mb-confirm-actions">
+              <button class="mb-confirm-cancel" type="button"></button>
+              <button class="mb-confirm-ok" type="button"></button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+      }
+      overlay.querySelector('.mb-confirm-msg').textContent = message;
+      const okBtn = overlay.querySelector('.mb-confirm-ok');
+      const cancelBtn = overlay.querySelector('.mb-confirm-cancel');
+      okBtn.textContent = okText;
+      cancelBtn.textContent = cancelText;
+
+      const cleanup = (result) => {
+        overlay.classList.remove('visible');
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+        overlay.onclick = null;
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape') cleanup(false);
+        else if (e.key === 'Enter') cleanup(true);
+      };
+      okBtn.onclick = () => cleanup(true);
+      cancelBtn.onclick = () => cleanup(false);
+      overlay.onclick = (e) => { if (e.target === overlay) cleanup(false); };
+      document.addEventListener('keydown', onKey);
+      overlay.classList.add('visible');
+      // Focus the cancel button by default (safer)
+      setTimeout(() => cancelBtn.focus(), 0);
+    });
+  }
+
+  // ── Small concurrency limiter for RSS fetches ────────────────────────
+  async function mapWithConcurrency(items, limit, mapper) {
+    const results = new Array(items.length);
+    let i = 0;
+    const workers = Array(Math.min(limit, items.length)).fill(0).map(async () => {
+      while (true) {
+        const idx = i++;
+        if (idx >= items.length) return;
+        results[idx] = await mapper(items[idx], idx);
+      }
+    });
+    await Promise.all(workers);
+    return results;
+  }
+
   // ── Welcome state ─────────────────────────────────────────────────────
   function renderWelcome() {
     return `
@@ -1066,20 +1356,23 @@ const UI = (() => {
   }
 
   // ── Fetch RSS ─────────────────────────────────────────────────────────
+  // Returns { status: 'ok' | 'timeout' | 'network' | 'empty' | 'parse', articles: [] }
   async function fetchRSS(source) {
     const ctrl  = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT);
     try {
       const res = await fetch(`${RSS_PROXY}${encodeURIComponent(source.rss)}`, { signal: ctrl.signal });
       clearTimeout(timer);
-      if (!res.ok) throw new Error('Network error');
+      if (!res.ok) return { status: 'network', articles: [] };
       const text = await res.text();
       const xml  = new DOMParser().parseFromString(text, 'application/xml');
+      if (xml.querySelector('parsererror')) return { status: 'parse', articles: [] };
       const isAtom = !!xml.querySelector('feed');
       const items  = Array.from(xml.querySelectorAll(isAtom ? 'entry' : 'item'));
-      if (!items.length) throw new Error('No items');
+      if (!items.length) return { status: 'empty', articles: [] };
 
-      return items.slice(0, 6).map(item => {
+      // We render 1 featured + 4 list items = 5 total. No need to slice more.
+      const articles = items.slice(0, 5).map(item => {
         const title = item.querySelector('title')?.textContent;
         const link  = isAtom
           ? item.querySelector('link')?.getAttribute('href') || item.querySelector('link')?.textContent
@@ -1094,30 +1387,45 @@ const UI = (() => {
           title:   title?.trim() || 'Untitled',
           date:    pubDate ? new Date(pubDate).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '',
           excerpt: stripHTML(description || '').slice(0, 180).trim() + '...',
-          url:     link?.trim() || `https://${source.domain}`,
-          live:    true
+          url:     link?.trim() || `https://${source.domain}`
         };
       });
+      return { status: 'ok', articles };
     } catch(e) {
       clearTimeout(timer);
-      return [{ title:`Latest from ${source.name}`, date:'Recent', excerpt:'Loading posts from this source...', url:`https://${source.domain}`, live:false }];
+      const status = (e && e.name === 'AbortError') ? 'timeout' : 'network';
+      return { status, articles: [] };
     }
   }
 
+  const FETCH_ERR_MSG = {
+    timeout: 'Feed timed out',
+    network: "Couldn't reach feed",
+    empty:   'Feed has no posts yet',
+    parse:   'Feed returned invalid data'
+  };
+
   // ── Render articles into a section ───────────────────────────────────
-  function renderArticles(source, articles) {
+  // Accepts { status, articles } from fetchRSS.
+  function renderArticles(source, result) {
     const container = document.getElementById(`${source.id}-articles`);
     const countEl   = document.getElementById(`${source.id}-count`);
     if (!container || !countEl) return;
 
-    if (!articles || !articles.length) {
-      container.innerHTML = `<div class="empty-source">No posts found — check back tomorrow</div>`;
-      countEl.textContent = '0 posts';
+    const { status, articles } = result || { status: 'network', articles: [] };
+
+    if (status !== 'ok' || !articles.length) {
+      const msg = FETCH_ERR_MSG[status] || 'Feed unavailable';
+      container.innerHTML = `
+        <div class="empty-source feed-error" data-source-id="${esc(source.id)}">
+          <span>${esc(msg)}</span>
+          <button class="feed-retry" type="button" data-retry-id="${esc(source.id)}">Retry</button>
+        </div>`;
+      countEl.textContent = status === 'empty' ? '0 posts' : 'Unavailable';
       return;
     }
 
-    const isLive = articles[0]?.live !== false;
-    countEl.textContent = `${articles.length} post${articles.length !== 1 ? 's' : ''} · ${isLive ? 'live' : 'sample'}`;
+    countEl.textContent = `${articles.length} post${articles.length !== 1 ? 's' : ''} · live`;
 
     const [featured, ...rest] = articles;
     container.innerHTML = `
@@ -1202,6 +1510,9 @@ const UI = (() => {
 
   // ── Full render — called after state replacement (cloud pull / realtime) ──
   return {
+    toast: showToast,
+    confirm: confirmDialog,
+
     renderAll() {
       const sources = State.getSources();
       const main    = document.getElementById('main-content');
@@ -1219,25 +1530,50 @@ const UI = (() => {
         return;
       }
 
-      // Mount all sources and fetch RSS
-      let hasError = false;
-      const fetches = sources.map(async (source, i) => {
-        mountSource(source);
-        const articles = await fetchRSS(source);
-        renderArticles(source, articles);
-        if (articles[0]?.live === false) hasError = true;
-      });
+      // Mount all sources immediately (shows loading skeletons), then fetch with concurrency limit
+      sources.forEach(mountSource);
 
-      Promise.all(fetches).then(() => {
+      let hasError = false;
+      mapWithConcurrency(sources, FETCH_CONCURRENCY, async (source) => {
+        const result = await fetchRSS(source);
+        renderArticles(source, result);
+        if (result.status !== 'ok') hasError = true;
+      }).then(() => {
         document.getElementById('error-notice').classList.toggle('visible', hasError);
         this.updateMeta();
       });
     },
 
+    // Refetch every source WITHOUT re-mounting DOM — preserves scroll + nav pills
+    async refetchAll() {
+      const sources = State.getSources();
+      if (!sources.length) { this.updateMeta(); return; }
+      let hasError = false;
+      await mapWithConcurrency(sources, FETCH_CONCURRENCY, async (source) => {
+        const result = await fetchRSS(source);
+        renderArticles(source, result);
+        if (result.status !== 'ok') hasError = true;
+      });
+      document.getElementById('error-notice').classList.toggle('visible', hasError);
+      this.updateMeta();
+    },
+
+    // Refetch a single source — used by the per-section retry button
+    async refetchOne(id) {
+      const source = State.getSources().find(s => s.id === id);
+      if (!source) return;
+      const container = document.getElementById(`${source.id}-articles`);
+      if (container) {
+        container.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p class="loading-text">Retrying...</p></div>`;
+      }
+      const result = await fetchRSS(source);
+      renderArticles(source, result);
+    },
+
     // Mount and fetch a single newly-added source (no full re-render needed)
     mountAndFetch(source) {
       mountSource(source);
-      fetchRSS(source).then(articles => renderArticles(source, articles));
+      fetchRSS(source).then(result => renderArticles(source, result));
       this.updateMeta();
     },
 
@@ -1293,14 +1629,14 @@ const UI = (() => {
         return;
       }
       list.innerHTML = sources.map(s => `
-        <div class="source-config-item" draggable="true" data-id="${s.id}">
+        <div class="source-config-item" draggable="true" data-id="${esc(s.id)}">
           <span class="drag-handle">⠿</span>
           <div class="source-color-dot" style="background:${s.color}"></div>
           <div class="source-config-info">
             <div class="source-config-name">${esc(s.name)}</div>
             <div class="source-config-url">${esc(s.rss)}</div>
           </div>
-          <button onclick="removeSource('${s.id}')" style="background:none;border:1px solid var(--rule);border-radius:6px;padding:4px 10px;font-size:0.7rem;color:var(--ink-muted);cursor:pointer;white-space:nowrap;flex-shrink:0;">✕ Remove</button>
+          <button type="button" class="source-remove-btn" data-remove-id="${esc(s.id)}">✕ Remove</button>
         </div>
       `).join('');
       initDrag(list);
@@ -1318,12 +1654,8 @@ async function addSource() {
   const name   = nameEl.value.trim();
   const url    = urlEl.value.trim();
 
-  if (!name || !url) { alert('Please enter both a name and RSS feed URL.'); return; }
-  try { new URL(url); } catch { alert('Please enter a valid URL including https://'); return; }
-
-  // Prevent duplicate RSS feeds
-  const duplicate = State.getSources().find(s => s.rss === url);
-  if (duplicate) { alert(`This feed is already added as "${duplicate.name}".`); return; }
+  if (!name || !url) { UI.toast('Please enter both a name and RSS feed URL.'); return; }
+  try { new URL(url); } catch { UI.toast('Please enter a valid URL including https://'); return; }
 
   const id     = 'src_' + Date.now();
   const color  = State.nextColor();
@@ -1331,13 +1663,26 @@ async function addSource() {
 
   const source = { id, name, domain, color, rss: url };
 
+  // State owns the rules — it returns {ok, reason} and we surface the reason
+  const result = State.addSource(source);
+  if (!result.ok) {
+    if (result.reason === 'limit') {
+      UI.toast(`You've reached the ${MAX_SOURCES}-source limit.`);
+    } else if (result.reason === 'duplicate_rss') {
+      const dup = State.getSources().find(s => s.rss === url);
+      UI.toast(`This feed is already added as "${dup?.name || 'another source'}".`);
+    } else {
+      UI.toast('Could not add source.');
+    }
+    return;
+  }
+
   // State → Persist → Sync → UI
-  State.addSource(source);
   Persist.save();
   await Sync.pushAfterChange();
   UI.mountAndFetch(source);
   UI.renderModal();
-  
+
   // Analytics: Track source added
   Analytics.track('source_added', {
     source_domain: domain,
@@ -1352,9 +1697,10 @@ async function addSource() {
 }
 
 async function removeSource(id) {
-  if (State.getCount() <= 1) { alert('You need at least one source.'); return; }
-  if (!confirm('Remove this source?')) return;
-  
+  if (State.getCount() <= 1) { UI.toast('You need at least one source.'); return; }
+  const ok = await UI.confirm('Remove this source?', { okText: 'Remove', cancelText: 'Keep' });
+  if (!ok) return;
+
   const source = State.getSources().find(s => s.id === id);
 
   // State → Persist → Sync → UI
@@ -1363,7 +1709,7 @@ async function removeSource(id) {
   await Sync.pushAfterChange();
   UI.unmount(id);
   UI.renderModal();
-  
+
   // Analytics: Track source removed
   if (source) {
     Analytics.track('source_removed', {
@@ -1377,7 +1723,7 @@ async function removeSource(id) {
 async function handleSync() {
   const emailInput = document.getElementById('sync-email-input');
   const email = emailInput?.value.trim();
-  if (!email) { alert('Please enter your email address.'); return; }
+  if (!email) { UI.toast('Please enter your email address.'); return; }
 
   UI.setSyncStatus('syncing', '⏳ Sending magic link...');
   try {
@@ -1386,7 +1732,7 @@ async function handleSync() {
   } catch(e) {
     console.error('Sign in error:', e);
     UI.setSyncStatus('error', '⚠ Sign in failed — try again');
-    
+
     // Analytics: Track sync error
     Analytics.track('error_occurred', {
       error_type: 'sync_failed',
@@ -1404,55 +1750,17 @@ function openManageModal() {
 async function refreshAll() {
   const btn = document.getElementById('refresh-btn');
   btn.classList.add('spinning');
-  
-  // Analytics: Track refresh
+
   Analytics.track('articles_refreshed', {
     source_count: State.getCount(),
     trigger: 'manual'
   });
-  
-  const sources = State.getSources();
-  let hasError  = false;
-  await Promise.all(sources.map(async s => {
-    const arts = await (async () => {
-      const ctrl  = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 8000);
-      try {
-        const res = await fetch(`${RSS_PROXY}${encodeURIComponent(s.rss)}`, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!res.ok) throw new Error();
-        const text = await res.text();
-        const xml  = new DOMParser().parseFromString(text, 'application/xml');
-        const isAtom = !!xml.querySelector('feed');
-        const items = Array.from(xml.querySelectorAll(isAtom ? 'entry' : 'item'));
-        if (!items.length) throw new Error();
-        return items.slice(0,6).map(item => {
-          const title = item.querySelector('title')?.textContent;
-          const link  = isAtom ? item.querySelector('link')?.getAttribute('href') || item.querySelector('link')?.textContent : item.querySelector('link')?.textContent;
-          const pubDate = isAtom ? item.querySelector('updated, published')?.textContent : item.querySelector('pubDate')?.textContent;
-          const desc = isAtom ? item.querySelector('summary, content')?.textContent : item.querySelector('description')?.textContent;
-          const d = document.createElement('div'); d.innerHTML = desc || ''; const text2 = d.textContent || '';
-          return { title: title?.trim()||'Untitled', date: pubDate ? new Date(pubDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '', excerpt: text2.slice(0,180).trim()+'...', url: link?.trim()||`https://${s.domain}`, live: true };
-        });
-      } catch(e) {
-        clearTimeout(timer);
-        return [{ title:`Latest from ${s.name}`, date:'Recent', excerpt:'Loading posts from this source...', url:`https://${s.domain}`, live:false }];
-      }
-    })();
-    const container = document.getElementById(`${s.id}-articles`);
-    const countEl   = document.getElementById(`${s.id}-count`);
-    if (!container || !countEl) return;
-    if (!arts.length) { container.innerHTML = `<div class="empty-source">No posts found</div>`; countEl.textContent='0 posts'; return; }
-    const isLive = arts[0]?.live !== false;
-    countEl.textContent = `${arts.length} post${arts.length!==1?'s':''} · ${isLive?'live':'sample'}`;
-    const [f,...rest] = arts;
-    const e = str => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    container.innerHTML = `<div class="articles-grid"><div class="article-featured"><span class="featured-label">Latest Post</span><a href="${e(f.url)}" target="_blank" rel="noopener" class="featured-title">${e(f.title)}</a><p class="featured-excerpt">${e(f.excerpt)}</p><div class="featured-meta"><span>${e(f.date)}</span><a href="${e(f.url)}" target="_blank" rel="noopener" class="read-link">Read →</a></div></div><div class="article-list">${rest.slice(0,4).map(a=>`<a href="${e(a.url)}" target="_blank" rel="noopener" class="article-item"><span class="item-title">${e(a.title)}</span><div class="item-meta"><span>${e(a.date)}</span></div></a>`).join('')}</div></div>`;
-    if (arts[0]?.live === false) hasError = true;
-  }));
-  document.getElementById('error-notice').classList.toggle('visible', hasError);
-  UI.updateMeta();
-  btn.classList.remove('spinning');
+
+  try {
+    await UI.refetchAll();
+  } finally {
+    btn.classList.remove('spinning');
+  }
 }
 
 // ── Drag to reorder ───────────────────────────────────────────────────
@@ -1596,6 +1904,88 @@ window.addEventListener('appinstalled', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// GLOBAL EVENT DELEGATION
+// Handles dynamically rendered elements that previously used inline onclick.
+// Attached once at init — picks up any matching element in the document.
+// ═══════════════════════════════════════════════════════════════════════
+
+function setupEventDelegation() {
+  document.addEventListener('click', (e) => {
+    // Per-source retry button (inside renderArticles error state)
+    const retryBtn = e.target.closest('[data-retry-id]');
+    if (retryBtn) {
+      const id = retryBtn.getAttribute('data-retry-id');
+      UI.refetchOne(id);
+      return;
+    }
+    // Modal remove button (inside renderModal)
+    const removeBtn = e.target.closest('[data-remove-id]');
+    if (removeBtn) {
+      const id = removeBtn.getAttribute('data-remove-id');
+      removeSource(id);
+      return;
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SERVICE WORKER UPDATE PROMPT
+// ═══════════════════════════════════════════════════════════════════════
+
+function setupServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    // If a waiting worker is already present at registration time, show prompt
+    if (reg.waiting && navigator.serviceWorker.controller) {
+      promptUpdate(reg.waiting);
+    }
+
+    reg.addEventListener('updatefound', () => {
+      const installing = reg.installing;
+      if (!installing) return;
+      installing.addEventListener('statechange', () => {
+        // A waiting SW + an existing controller means this is an update, not first install
+        if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+          promptUpdate(installing);
+        }
+      });
+    });
+  }).catch(e => console.warn('SW:', e));
+
+  // When the new SW takes control, reload once to pick up fresh assets
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+}
+
+function promptUpdate(waitingWorker) {
+  // Use a dedicated toast with an action — not the generic one (which auto-dismisses)
+  let el = document.getElementById('mb-update-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'mb-update-toast';
+    el.className = 'mb-update-toast';
+    el.innerHTML = `
+      <span>New version available</span>
+      <button type="button" class="mb-update-reload">Reload</button>
+      <button type="button" class="mb-update-dismiss" aria-label="Dismiss">✕</button>
+    `;
+    document.body.appendChild(el);
+    el.querySelector('.mb-update-reload').addEventListener('click', () => {
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    });
+    el.querySelector('.mb-update-dismiss').addEventListener('click', () => {
+      el.classList.remove('visible');
+    });
+  }
+  requestAnimationFrame(() => el.classList.add('visible'));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // INIT — boot sequence
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -1603,31 +1993,36 @@ window.addEventListener('appinstalled', () => {
   // 1. Date and theme
   setDate();
   applyTheme(localStorage.getItem(THEME_KEY) || 'auto');
-  
+
   // 2. Load from local cache first for instant display
   State.loadFromCache();
 
-  // 3. Initialize Analytics (after loading cache so source_count is accurate)
+  // 3. Wire global event delegation for dynamically rendered elements
+  setupEventDelegation();
+
+  // 4. Kick off Analytics in the background — do NOT block sync or render on it.
+  //    The SDK script is async-loaded and can take multiple seconds on a slow network.
   if (!Analytics.isOptedOut()) {
-    await Analytics.init();
-    Analytics.track('app_opened', {
-      source_count: State.getCount(),
-      theme: localStorage.getItem(THEME_KEY) || 'auto',
-      has_sources: State.getCount() > 0
-    });
+    Analytics.init()
+      .then(() => {
+        Analytics.track('app_opened', {
+          source_count: State.getCount(),
+          theme: localStorage.getItem(THEME_KEY) || 'auto',
+          has_sources: State.getCount() > 0
+        });
+      })
+      .catch(err => console.warn('Analytics init failed:', err));
   }
 
-  // 4. Render whatever we have from cache
+  // 5. Render whatever we have from cache
   UI.renderAll();
 
-  // 5. Then check cloud — if logged in, cloud replaces local state
-  //    This is intentionally after renderAll so user sees something immediately
+  // 6. Check cloud — if logged in, cloud replaces local state
+  //    (After renderAll so user sees something immediately)
   await Sync.init();
 
-  // 6. Service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
-  }
+  // 7. Service worker + update prompt
+  setupServiceWorker();
 })();
 </script>
 <script src="./discovery-netflix.js"></script>

@@ -172,7 +172,7 @@
       <div class="discovery-container">
         <div class="discovery-header">
           <h2 class="discovery-title">Discover Sources</h2>
-          <button class="discovery-close" onclick="window.closeDiscovery()">&times;</button>
+          <button class="discovery-close" type="button" data-action="close-discovery" aria-label="Close">&times;</button>
         </div>
         
         <div class="discovery-stats">
@@ -214,10 +214,25 @@
     
     document.body.appendChild(modal);
     
-    // Click outside to close
+    // Click outside to close, or close button clicked
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         closeDiscovery();
+        return;
+      }
+      const closeBtn = e.target.closest('[data-action="close-discovery"]');
+      if (closeBtn) {
+        closeDiscovery();
+        return;
+      }
+      // Delegated handler for the "+ Add" buttons on source cards
+      const addBtn = e.target.closest('[data-add-url]');
+      if (addBtn && !addBtn.disabled) {
+        addFromDiscovery(
+          addBtn.getAttribute('data-add-name'),
+          addBtn.getAttribute('data-add-url'),
+          addBtn.getAttribute('data-add-category')
+        );
       }
     });
     
@@ -275,14 +290,16 @@
 
   function renderSourceCard(source, category) {
     var added = isSourceAlreadyAdded(source.url);
-    
+
     return `
-      <div class="source-card ${added ? 'added' : ''}" 
+      <div class="source-card ${added ? 'added' : ''}"
            data-source-url="${escapeHtml(source.url)}">
         <div class="source-name">${escapeHtml(source.name)}</div>
         <div class="source-domain">${escapeHtml(source.domain)}</div>
-        <button class="add-btn ${added ? 'added' : ''}" 
-                onclick="window.addFromDiscovery('${escapeHtml(source.name)}', '${escapeHtml(source.url)}', '${escapeHtml(category)}')">
+        <button class="add-btn ${added ? 'added' : ''}" type="button"
+                data-add-name="${escapeHtml(source.name)}"
+                data-add-url="${escapeHtml(source.url)}"
+                data-add-category="${escapeHtml(category)}"${added ? ' disabled' : ''}>
           ${added ? '✓ Added' : '+ Add'}
         </button>
       </div>
@@ -324,7 +341,7 @@
   // ACTIONS
   // ═══════════════════════════════════════════════════════════════════════
 
-  function addSource(name, url, category) {
+  function addFromDiscovery(name, url, category) {
     // PREVENT RAPID-FIRE ADDING - Only one source at a time
     if (isAdding) {
       showToast('⏳ Please wait... adding source');
@@ -339,7 +356,10 @@
 
     // Check limit
     if (typeof State !== 'undefined' && State.getCount() >= 20) {
-      alert(`You've reached your 20-source limit.\n\nRemove a source to add: ${name}`);
+      // Use host app toast if available, fall back to local toast
+      var msg = `You've reached your 20-source limit. Remove a source to add: ${name}`;
+      if (typeof UI !== 'undefined' && UI.toast) UI.toast(msg);
+      else showToast(msg);
       return;
     }
 
@@ -348,45 +368,40 @@
     disableAllAddButtons();
     updateSourceButton(url, 'adding'); // Show loading state
 
-    // Auto-populate and add
+    // Auto-populate and add using the host app's addSource function
     var nameInput = document.getElementById('new-source-name');
     var urlInput = document.getElementById('new-source-url');
-    
-    if (nameInput && urlInput) {
+
+    if (nameInput && urlInput && typeof window.addSource === 'function') {
       nameInput.value = name;
       urlInput.value = url;
-      
-      if (typeof addSource === 'function') {
-        // Call the existing addSource function
-        window.addSource();
-        
-        // Analytics
-        if (typeof Analytics !== 'undefined') {
-          Analytics.track('source_added_from_discovery', {
-            source_name: name,
-            category: category,
-            method: 'netflix_browse'
-          });
-        }
-        
-        showToast(`✓ ${name} added`);
-        updateSourceButton(url, 'added');
-        updateStats();
-        
-        // COOLDOWN: Wait 800ms before allowing next add
-        setTimeout(() => {
-          isAdding = false;
-          enableAllAddButtons();
-        }, 800);
-      } else {
-        // If addSource function doesn't exist, reset state
+
+      // Call the existing host-app addSource function
+      window.addSource();
+
+      // Analytics
+      if (typeof Analytics !== 'undefined') {
+        Analytics.track('source_added_from_discovery', {
+          source_name: name,
+          category: category,
+          method: 'netflix_browse'
+        });
+      }
+
+      showToast(`✓ ${name} added`);
+      updateSourceButton(url, 'added');
+      updateStats();
+
+      // COOLDOWN: Wait 800ms before allowing next add
+      setTimeout(function() {
         isAdding = false;
         enableAllAddButtons();
-      }
+      }, 800);
     } else {
-      // If inputs don't exist, reset state
+      // If host app not ready, reset state
       isAdding = false;
       enableAllAddButtons();
+      updateSourceButton(url, 'reset');
     }
   }
 
@@ -415,6 +430,14 @@
         btn.classList.remove('adding');
         btn.textContent = '✓ Added';
         btn.disabled = true;
+      }
+    } else if (state === 'reset') {
+      var btn = card.querySelector('.add-btn');
+      if (btn) {
+        btn.classList.remove('adding');
+        btn.classList.remove('added');
+        btn.textContent = '+ Add';
+        btn.disabled = false;
       }
     }
   }
@@ -512,7 +535,7 @@
 
   window.openDiscovery = openDiscovery;
   window.closeDiscovery = closeDiscovery;
-  window.addFromDiscovery = addSource;
+  window.addFromDiscovery = addFromDiscovery;
 
   // ═══════════════════════════════════════════════════════════════════════
   // INITIALIZATION
