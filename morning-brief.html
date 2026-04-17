@@ -897,14 +897,24 @@
   .drag-handle {
     cursor: grab;
     color: var(--ink-muted);
-    padding: 4px;
+    padding: 8px 10px;
     user-select: none;
     flex-shrink: 0;
     display: flex;
     align-items: center;
+    /* Block the browser's default touch scroll when pressing the handle,
+       so our drag logic can take over without fighting the page scroll. */
+    touch-action: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
+  .drag-handle:hover { color: var(--ink); }
   .drag-handle:active { cursor: grabbing; }
   .drag-handle svg { display: block; }
+  @media (max-width: 699px) {
+    /* Larger tap target on touch devices */
+    .drag-handle { padding: 12px 14px; }
+  }
   .source-config-item.sortable-ghost { opacity: 0.4; background: var(--accent-soft); }
   .source-config-item.sortable-chosen { background: var(--accent-soft); }
 
@@ -3120,8 +3130,9 @@ function initSortable(list) {
     const isTouch = e.type === 'touchstart';
     const point = isTouch ? e.touches[0] : e;
 
-    // Require pointer-down on drag handle for mouse; whole row for touch (long-press feel)
-    if (!isTouch && !e.target.closest('.drag-handle')) return;
+    // Require pointer-down on the drag handle for BOTH mouse and touch.
+    // Tapping anywhere else on the row should scroll the list, not drag.
+    if (!e.target.closest('.drag-handle')) return;
 
     draggingId = row.dataset.id;
     draggingEl = row;
@@ -3130,7 +3141,7 @@ function initSortable(list) {
     moved = false;
 
     if (isTouch) {
-      // On touch, only start dragging after a small movement to avoid catching taps
+      // Non-passive touchmove so we can preventDefault during drag
       document.addEventListener('touchmove', onPointerMove, { passive: false });
       document.addEventListener('touchend', onPointerEnd);
       document.addEventListener('touchcancel', onPointerEnd);
@@ -3896,6 +3907,9 @@ async function rlsSelfCheck() {
 }
 
 </script>
+
+<!-- Discover module — loaded after main app so window.State, window.UI etc. exist -->
+<script src="./discovery.js" defer></script>
 
 </body>
 </html>
