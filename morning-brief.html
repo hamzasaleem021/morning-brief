@@ -1788,6 +1788,156 @@
   }
   .mb-confirm-ok:hover { filter: brightness(1.05); }
 
+  /* ═════════════════════════════════════════════════════════════════════
+     VOUCHER — discovery link + proper unlock modal + persistent badge
+     ═════════════════════════════════════════════════════════════════════ */
+  .voucher-entry {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    font-family: var(--body);
+  }
+  .voucher-entry-text { color: var(--ink-muted); }
+  .voucher-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 4px 0;
+    font-family: var(--body);
+    font-size: 0.85rem;
+    border-bottom: 1px dashed var(--accent);
+  }
+  .voucher-link:hover { filter: brightness(1.1); border-bottom-style: solid; }
+  .voucher-link:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    border-radius: 2px;
+  }
+
+  .voucher-modal-box {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 12px;
+    padding: 32px 28px 24px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+    text-align: center;
+    border: 1px solid var(--rule);
+  }
+  .voucher-modal-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .voucher-modal-title {
+    font-family: var(--display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  .voucher-modal-desc {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--ink-light);
+    margin: 0 0 20px;
+  }
+  .voucher-modal-input {
+    width: 100%;
+    padding: 13px 14px;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-family: ui-monospace, 'SF Mono', Monaco, Menlo, Consolas, monospace;
+    letter-spacing: 0.15em;
+    text-align: center;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    margin: 0 0 8px;
+  }
+  .voucher-modal-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .voucher-modal-input::placeholder {
+    color: var(--ink-muted);
+    letter-spacing: 0.05em;
+    text-transform: none;
+  }
+  .voucher-modal-error {
+    color: var(--accent);
+    font-size: 0.78rem;
+    margin: 0 0 10px;
+    min-height: 1em;
+  }
+  .voucher-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 6px;
+  }
+  .voucher-modal-helper {
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+    margin: 14px 0 0;
+    line-height: 1.5;
+  }
+
+  .limit-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 4px 0 14px;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+    font-family: var(--body);
+  }
+  .limit-line-count { color: var(--ink); font-weight: 500; }
+  .unlocked-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 3px 9px;
+    border-radius: 3px;
+    font-weight: 500;
+    font-family: var(--body);
+  }
+  .unlocked-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+  }
+
   .feed-error {
     display: flex;
     align-items: center;
@@ -2019,6 +2169,13 @@
           <button type="button" class="sync-email-submit" id="sync-email-submit">Send link</button>
         </div>
       </div>
+      <div class="limit-line" id="limit-line">
+        <span><span class="limit-line-count" id="limit-line-count">0</span> <span id="limit-line-of">/ 20 sources</span></span>
+        <span class="unlocked-badge" id="unlocked-badge" style="display:none;">
+          <span class="unlocked-badge-dot"></span>
+          <span>Extended limit unlocked</span>
+        </span>
+      </div>
       <div id="sources-list"></div>
       <div class="add-source-form">
         <h3>Add by URL</h3>
@@ -2030,6 +2187,10 @@
           <input type="url" class="form-input" id="new-source-url" placeholder="https://example.com/rss" autocomplete="off" inputmode="url">
           <button type="button" class="btn-add-source" id="add-source-btn">Add</button>
         </div>
+      </div>
+      <div class="voucher-entry">
+        <span class="voucher-entry-text" id="voucher-entry-text">Need more than 20 sources?</span>
+        <button type="button" class="voucher-link" id="voucher-redeem-link">Redeem a code</button>
       </div>
     </div>
   </div>
@@ -3137,6 +3298,7 @@ const UI = (() => {
     },
 
     renderModal() {
+      this.renderLimitLine();
       const list = document.getElementById('sources-list');
       const sources = State.getSources();
       if (!sources.length) {
@@ -3163,6 +3325,29 @@ const UI = (() => {
         </div>
       `;}).join('');
       initSortable(list);
+    },
+
+    // Render the "N / M sources" line + unlocked badge + voucher entry copy.
+    // Called by renderModal and also after voucher redemption.
+    renderLimitLine() {
+      const count = State.getCount();
+      const limit = State.getLimit();
+      const defaultLimit = CFG.MAX_SOURCES;
+      const isUnlocked = limit > defaultLimit;
+
+      const countEl = document.getElementById('limit-line-count');
+      const ofEl = document.getElementById('limit-line-of');
+      const badgeEl = document.getElementById('unlocked-badge');
+      const entryTextEl = document.getElementById('voucher-entry-text');
+      const entryLinkEl = document.getElementById('voucher-redeem-link');
+
+      if (countEl) countEl.textContent = String(count);
+      if (ofEl)    ofEl.textContent = `/ ${limit} source${limit !== 1 ? 's' : ''}`;
+      if (badgeEl) badgeEl.style.display = isUnlocked ? 'inline-flex' : 'none';
+      if (entryTextEl) entryTextEl.textContent = isUnlocked
+        ? 'Have another code?'
+        : `Need more than ${defaultLimit} sources?`;
+      if (entryLinkEl) entryLinkEl.textContent = isUnlocked ? 'Redeem' : 'Redeem a code';
     },
 
     // Count of currently-failing sources (for diagnostics if needed)
@@ -3384,24 +3569,26 @@ function promptVoucher() {
     overlay.id = 'mb-voucher';
     overlay.className = 'mb-confirm-overlay';
     overlay.innerHTML = `
-      <div class="mb-confirm-box" role="dialog" aria-modal="true" aria-labelledby="mb-voucher-msg">
-        <p id="mb-voucher-msg" class="mb-confirm-msg">Enter a voucher code to raise your source limit.</p>
-        <input id="mb-voucher-input" class="form-input" type="text" autocomplete="off" spellcheck="false" placeholder="Code" style="margin: 12px 0 4px; text-transform: uppercase;">
-        <p id="mb-voucher-error" class="mb-voucher-error" style="display:none; color: var(--danger, #c8502a); font-size: 0.8rem; margin: 4px 0 0;"></p>
-        <div class="mb-confirm-actions">
-          <button class="mb-confirm-cancel" type="button">Cancel</button>
-          <button class="mb-confirm-ok" type="button">Redeem</button>
+      <div class="voucher-modal-box" role="dialog" aria-modal="true" aria-labelledby="mb-voucher-title">
+        <div class="voucher-modal-icon" aria-hidden="true">M</div>
+        <h3 id="mb-voucher-title" class="voucher-modal-title">Unlock more sources</h3>
+        <p class="voucher-modal-desc">Twenty sources keeps a morning brief focused — but if you have a voucher code, enter it below to raise your limit.</p>
+        <input id="mb-voucher-input" class="voucher-modal-input" type="text" autocomplete="off" spellcheck="false" placeholder="Enter code">
+        <p id="mb-voucher-error" class="voucher-modal-error"></p>
+        <div class="voucher-modal-actions">
+          <button type="button" class="mb-confirm-actions" style="padding: 9px 20px; border-radius: 6px; border: 1px solid var(--rule); background: transparent; color: var(--ink); font-family: var(--body); font-size: 0.85rem; cursor: pointer;" id="mb-voucher-cancel">Cancel</button>
+          <button type="button" style="padding: 9px 22px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-family: var(--body); font-size: 0.85rem; font-weight: 500; cursor: pointer;" id="mb-voucher-ok">Redeem</button>
         </div>
+        <p class="voucher-modal-helper">Limits are per-account. Unlocked codes sync across your devices when signed in.</p>
       </div>`;
     document.body.appendChild(overlay);
   }
   const input = overlay.querySelector('#mb-voucher-input');
   const errEl = overlay.querySelector('#mb-voucher-error');
-  const okBtn = overlay.querySelector('.mb-confirm-ok');
-  const cancelBtn = overlay.querySelector('.mb-confirm-cancel');
+  const okBtn = overlay.querySelector('#mb-voucher-ok');
+  const cancelBtn = overlay.querySelector('#mb-voucher-cancel');
 
   input.value = '';
-  errEl.style.display = 'none';
   errEl.textContent = '';
 
   const cleanup = () => {
@@ -3416,23 +3603,25 @@ function promptVoucher() {
 
   const submit = async () => {
     const code = input.value.trim();
-    if (!code) { errEl.textContent = 'Enter a code.'; errEl.style.display = 'block'; return; }
-    okBtn.disabled = true; okBtn.textContent = 'Checking…';
+    if (!code) { errEl.textContent = 'Enter a code to continue.'; return; }
+    okBtn.disabled = true;
+    const originalText = okBtn.textContent;
+    okBtn.textContent = 'Checking…';
     const r = await redeemVoucher(code);
-    okBtn.disabled = false; okBtn.textContent = 'Redeem';
+    okBtn.disabled = false;
+    okBtn.textContent = originalText;
     if (r.ok && r.changed) {
       cleanup();
-      UI.toast(`Unlocked — limit is now ${r.limit} sources.`);
-      // Refresh the Discover buttons so previously-"Full" sources become addable
+      // Update the persistent limit line in the modal immediately
+      if (window.UI && UI.renderLimitLine) UI.renderLimitLine();
+      UI.toast(`Unlocked — your limit is now ${r.limit} sources.`, { duration: 4000 });
       if (window.Discover && typeof window.Discover.refresh === 'function') {
         window.Discover.refresh();
       }
     } else if (r.ok && !r.changed) {
-      cleanup();
-      UI.toast(`That code unlocks ${r.limit} — you're already at or above that.`);
+      errEl.textContent = `That code unlocks ${r.limit} — you're already at or above that.`;
     } else {
-      errEl.textContent = r.reason === 'invalid' ? 'That code isn\'t valid.' : 'Something went wrong.';
-      errEl.style.display = 'block';
+      errEl.textContent = r.reason === 'invalid' ? "That code isn't valid." : 'Something went wrong. Try again.';
       input.focus();
       input.select();
     }
@@ -3476,12 +3665,10 @@ async function addSource(name, url) {
 
   if (!result.ok) {
     if (result.reason === 'limit') {
-      // Open voucher prompt directly. User can cancel — the message below
-      // tells them why it opened.
-      UI.toast(
-        `Reached the ${State.getLimit()}-source limit. Have a voucher code?`,
-        { duration: 5000, actionText: 'Enter code', action: () => promptVoucher() }
-      );
+      // Open the voucher modal directly — users reporting the toast was
+      // too brief and easy to miss. The modal is the proper acknowledgment
+      // of hitting the wall and gives them an obvious path forward.
+      promptVoucher();
     } else if (result.reason === 'duplicate_rss') {
       const dup = State.getSources().find(s => s.rss === url);
       UI.toast(`Already added as "${dup?.name || 'another source'}".`);
@@ -3806,6 +3993,7 @@ function setupEventDelegation() {
       return;
     }
     if (t.closest('#add-source-btn')) { await addSource(); return; }
+    if (t.closest('#voucher-redeem-link')) { promptVoucher(); return; }
     if (t.closest('#sync-btn')) {
       // "Retry" when in error state
       UI.setSyncStatus('syncing', 'Retrying…');
