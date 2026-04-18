@@ -2190,13 +2190,14 @@ const State = (() => {
 
     // Called only by sync layer on login / realtime — cloud wins.
     replaceSources(sources) {
-      _sources = sources.map(s => {
+      _sources = sources.map((s, i) => {
         const copy = { ...s };
         // Backward compat: if stored with 'color' hex, drop it — we recompute
         delete copy.color;
-        // If colorIndex missing, assign one deterministically by position
+        // If colorIndex missing, assign by position — the repack loop below
+        // will re-home any collisions or out-of-range values.
         if (typeof copy.colorIndex !== 'number') {
-          copy.colorIndex = _sources ? _sources.length : 0;
+          copy.colorIndex = i;
         }
         return copy;
       });
@@ -2307,6 +2308,16 @@ const Persist = {
       localStorage.setItem(CFG.ORDER_KEY, JSON.stringify(sources.map(s => s.id)));
     } catch(e) {
       console.warn('Persist.save failed:', e);
+      // Quota exceeded (iOS private mode, site-data full) — tell the user.
+      // Name check covers QuotaExceededError + Safari's old NS_ERROR_DOM_QUOTA_REACHED + code 22/1014.
+      const isQuota = e && (
+        e.name === 'QuotaExceededError' ||
+        e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+        e.code === 22 || e.code === 1014
+      );
+      if (isQuota && window.UI && typeof UI.toast === 'function') {
+        UI.toast("Can't save locally — try signing in to keep your sources in the cloud.");
+      }
     }
   },
 
@@ -3368,7 +3379,9 @@ async function handleMagicLink() {
                      : /yahoo/.test(domain) ? 'https://mail.yahoo.com'
                      : null;
       if (mailHost) {
-        syncText.innerHTML = `Check ${esc(domain)} for the sign-in link. <a href="${mailHost}" target="_blank" rel="noopener" class="open-mail-btn">Open ${esc(domain)}</a>`;
+        // esc() on mailHost is defense-in-depth — values are hard-coded above,
+        // but escape-everything discipline prevents future edits from becoming XSS.
+        syncText.innerHTML = `Check ${esc(domain)} for the sign-in link. <a href="${esc(mailHost)}" target="_blank" rel="noopener" class="open-mail-btn">Open ${esc(domain)}</a>`;
       }
     }
   } catch(e) {
@@ -3705,21 +3718,40 @@ function setupPullToRefresh() {
   if (!indicator) return;
 
   let startY = 0;
+  let startX = 0;
   let pulling = false;
   let pulledDistance = 0;
+  let axisLocked = false;  // once we decide vertical-or-horizontal, stick with it
   const THRESHOLD = 80;
+  const SHOW_AT = 20;      // don't flash the indicator on micro-pulls
+  const AXIS_LOCK = 10;    // distance after which we commit to an axis
 
   window.addEventListener('touchstart', (e) => {
     if (window.scrollY > 0) return;
     startY = e.touches[0].clientY;
+    startX = e.touches[0].clientX;
     pulling = true;
+    axisLocked = false;
   }, { passive: true });
 
   window.addEventListener('touchmove', (e) => {
     if (!pulling) return;
     if (window.scrollY > 0) { pulling = false; indicator.classList.remove('visible'); return; }
     const dy = e.touches[0].clientY - startY;
-    if (dy <= 0) { indicator.classList.remove('visible'); return; }
+    const dx = e.touches[0].clientX - startX;
+
+    // Axis lock: if the user is swiping more horizontally than vertically, bail.
+    // Handles iOS back-gesture slop and prevents flicker on diagonal scrolls.
+    if (!axisLocked && (Math.abs(dx) > AXIS_LOCK || Math.abs(dy) > AXIS_LOCK)) {
+      axisLocked = true;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        pulling = false;
+        indicator.classList.remove('visible');
+        return;
+      }
+    }
+
+    if (dy <= SHOW_AT) { indicator.classList.remove('visible'); return; }
     pulledDistance = dy;
     const damped = Math.min(dy * 0.5, 80);
     indicator.style.transform = `translateX(-50%) translateY(${damped - 50}px)`;
@@ -3855,11 +3887,15 @@ function promptUpdate(worker) {
   // Pull-to-refresh setup
   setupPullToRefresh();
 
-  // Periodic auto-refresh every 15 minutes (existing behavior preserved)
+  // Periodic auto-refresh every 15 minutes (existing behavior preserved).
+  // Skip when every source is in error state — stops the failure banner from
+  // pulsing on a 15-min cycle if the proxy is down. User can still manually retry.
   setInterval(() => {
-    if (!document.hidden && State.getCount() > 0) {
-      UI.refetchAll();
-    }
+    if (document.hidden) return;
+    const count = State.getCount();
+    if (count === 0) return;
+    if (UI.getFailedCount && UI.getFailedCount() === count) return;
+    UI.refetchAll();
   }, 15 * 60 * 1000);
 
   // If the install criteria are already met on load, show it after a moment

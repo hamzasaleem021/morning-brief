@@ -19,14 +19,20 @@
     if (catalogPromise) return catalogPromise;
 
     catalogPromise = (async () => {
+      // 8s timeout — if the JSON stalls on a slow network, fall through to
+      // the localStorage cache (if present) rather than spinning forever.
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
       try {
-        const res = await fetch('./discovery-sources.json');
+        const res = await fetch('./discovery-sources.json', { signal: ctrl.signal });
+        clearTimeout(timer);
         if (!res.ok) throw new Error('Failed to load catalog');
         const data = await res.json();
         catalog = data;
         try { localStorage.setItem('morning_brief_discover_cache', JSON.stringify(data)); } catch(e) {}
         return data;
       } catch(e) {
+        clearTimeout(timer);
         // Fall back to cache if available
         try {
           const cached = localStorage.getItem('morning_brief_discover_cache');
