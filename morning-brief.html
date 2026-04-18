@@ -2137,10 +2137,11 @@ function stripWWW(hostname) {
 }
 
 // Generate an evenly-spaced hue offset from the accent color (#c8502a ≈ h=15°)
-// 20 sources → 20 distinct colors that live on the paper palette
+// N sources → N distinct colors that live on the paper palette
 const ACCENT_H = 15;
-function pickColor(index, isDark) {
-  const h = (ACCENT_H + (index * 360 / CFG.MAX_SOURCES)) % 360;
+function pickColor(index, isDark, limit) {
+  const slots = limit || CFG.MAX_SOURCES;
+  const h = (ACCENT_H + (index * 360 / slots)) % 360;
   // Muted tones that sit comfortably on ivory / warm-dark
   const s = isDark ? 45 : 48;
   const l = isDark ? 52 : 38;
@@ -2175,24 +2176,41 @@ async function mapWithConcurrency(items, limit, mapper) {
 
 const State = (() => {
   let _sources = [];
+  // Runtime source limit. Defaults to MAX_SOURCES but can be bumped by a
+  // voucher code (cloud-synced) or the persisted localStorage override.
+  let _limit = CFG.MAX_SOURCES;
+
+  function clampLimit(n) {
+    const cap = CFG.MAX_SOURCES_HARD_CAP || 200;
+    const num = parseInt(n, 10);
+    if (!Number.isFinite(num)) return CFG.MAX_SOURCES;
+    return Math.max(CFG.MAX_SOURCES, Math.min(cap, num));
+  }
 
   // Pick first unused color index (prevents duplicates even after pull)
   function nextColorIndex() {
     const used = new Set(_sources.map(s => s.colorIndex));
-    for (let i = 0; i < CFG.MAX_SOURCES; i++) {
+    for (let i = 0; i < _limit; i++) {
       if (!used.has(i)) return i;
     }
-    return _sources.length % CFG.MAX_SOURCES;
+    return _sources.length % _limit;
   }
 
   // Resolve a color for a source based on its stored colorIndex
   function colorFor(source) {
-    return pickColor(source.colorIndex ?? 0, currentlyDark());
+    return pickColor(source.colorIndex ?? 0, currentlyDark(), _limit);
   }
 
   return {
     getSources() { return _sources; },
     getCount()   { return _sources.length; },
+    getLimit()   { return _limit; },
+    setLimit(n) {
+      const next = clampLimit(n);
+      if (next === _limit) return false;
+      _limit = next;
+      return true;
+    },
 
     // Called only by sync layer on login / realtime — cloud wins.
     replaceSources(sources) {
@@ -2212,7 +2230,7 @@ const State = (() => {
       _sources.forEach((s, i) => {
         if (typeof s.colorIndex !== 'number' || s.colorIndex < 0 || seen.has(s.colorIndex)) {
           let ci = 0;
-          while (seen.has(ci) && ci < CFG.MAX_SOURCES) ci++;
+          while (seen.has(ci) && ci < _limit) ci++;
           s.colorIndex = ci;
         }
         seen.add(s.colorIndex);
@@ -2222,7 +2240,7 @@ const State = (() => {
     // Add a source; color assigned internally.
     // Returns { ok: true, source } or { ok: false, reason }
     addSource(partial) {
-      if (_sources.length >= CFG.MAX_SOURCES) return { ok: false, reason: 'limit' };
+      if (_sources.length >= _limit) return { ok: false, reason: 'limit' };
       if (!partial.id || !partial.rss) return { ok: false, reason: 'invalid' };
       if (_sources.find(s => s.id === partial.id)) return { ok: false, reason: 'duplicate_id' };
       if (_sources.find(s => s.rss === partial.rss)) return { ok: false, reason: 'duplicate_rss' };
@@ -2269,6 +2287,15 @@ const State = (() => {
 
     // Initial cache load. Resilient to corrupt storage (Tier 2.3).
     loadFromCache() {
+      // Restore voucher-unlocked limit first, so addSource checks use it
+      try {
+        const saved = localStorage.getItem(CFG.VOUCHER_LIMIT_KEY);
+        if (saved) {
+          const n = parseInt(saved, 10);
+          if (Number.isFinite(n) && n > CFG.MAX_SOURCES) this.setLimit(n);
+        }
+      } catch(e) {}
+
       let sources = null;
       try {
         const raw = localStorage.getItem(CFG.STORAGE_KEY);
@@ -2397,6 +2424,14 @@ const Sync = (() => {
         const sources = Array.isArray(config.sources) ? config.sources
                       : Array.isArray(config.custom)  ? config.custom
                       : [];
+        // Apply voucher limit BEFORE sources — so color repack uses right range.
+        // Cloud value wins over local; but if cloud has none and we unlocked
+        // locally, the next push (pushNow) will upload ours.
+        if (typeof config.voucher_limit === 'number' && config.voucher_limit > CFG.MAX_SOURCES) {
+          if (State.setLimit(config.voucher_limit)) {
+            try { localStorage.setItem(CFG.VOUCHER_LIMIT_KEY, String(config.voucher_limit)); } catch(e) {}
+          }
+        }
         State.replaceSources(sources);
         Persist.save();
         UI.renderAll();
@@ -2424,11 +2459,15 @@ const Sync = (() => {
   // Raw push — returns {ok, error}
   async function pushNow() {
     if (!currentUser) return { ok: false, error: new Error('not logged in') };
+    const limit = State.getLimit();
     const config = {
       sources: State.getSources(),
       _nonce: CLIENT_NONCE,
       _at: Date.now()
     };
+    // Only include voucher_limit if it's been bumped above the default.
+    // Keeps pristine configs clean and avoids re-pushing the default as "changed".
+    if (limit > CFG.MAX_SOURCES) config.voucher_limit = limit;
     try {
       const { error } = await db.rpc('upsert_user_config', {
         p_user_id:    currentUser.id,
@@ -2508,6 +2547,12 @@ const Sync = (() => {
     const sources = Array.isArray(config.sources) ? config.sources
                   : Array.isArray(config.custom)  ? config.custom
                   : [];
+    // Apply voucher limit first so color repack works with the right range
+    if (typeof config.voucher_limit === 'number' && config.voucher_limit > CFG.MAX_SOURCES) {
+      if (State.setLimit(config.voucher_limit)) {
+        try { localStorage.setItem(CFG.VOUCHER_LIMIT_KEY, String(config.voucher_limit)); } catch(e) {}
+      }
+    }
     State.replaceSources(sources);
     Persist.save();
     UI.renderAll();
@@ -3299,6 +3344,111 @@ function reorderDOM() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// VOUCHER CODES — client-side obscurity, cloud-synced when signed in.
+// Compares SHA-256 of entered code to CFG.VOUCHERS; applies matching limit.
+// ═══════════════════════════════════════════════════════════════════════
+
+async function sha256Hex(str) {
+  // Uppercase then hash — matches what was prepared in CFG.VOUCHERS.
+  const buf = new TextEncoder().encode(String(str).trim().toUpperCase());
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function redeemVoucher(code) {
+  if (!code) return { ok: false, reason: 'empty' };
+  try {
+    const hex = await sha256Hex(code);
+    const newLimit = CFG.VOUCHERS[hex];
+    if (!newLimit) return { ok: false, reason: 'invalid' };
+    // Clamp via setLimit (rejects values ≤ current limit)
+    const changed = State.setLimit(newLimit);
+    const effective = State.getLimit();
+    if (changed) {
+      try { localStorage.setItem(CFG.VOUCHER_LIMIT_KEY, String(effective)); } catch(e) {}
+      // Sync to cloud so the unlock follows the user across devices
+      await Sync.pushAfterChange();
+    }
+    return { ok: true, limit: effective, changed };
+  } catch(e) {
+    console.error('redeemVoucher failed:', e);
+    return { ok: false, reason: 'error' };
+  }
+}
+
+function promptVoucher() {
+  let overlay = document.getElementById('mb-voucher');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'mb-voucher';
+    overlay.className = 'mb-confirm-overlay';
+    overlay.innerHTML = `
+      <div class="mb-confirm-box" role="dialog" aria-modal="true" aria-labelledby="mb-voucher-msg">
+        <p id="mb-voucher-msg" class="mb-confirm-msg">Enter a voucher code to raise your source limit.</p>
+        <input id="mb-voucher-input" class="form-input" type="text" autocomplete="off" spellcheck="false" placeholder="Code" style="margin: 12px 0 4px; text-transform: uppercase;">
+        <p id="mb-voucher-error" class="mb-voucher-error" style="display:none; color: var(--danger, #c8502a); font-size: 0.8rem; margin: 4px 0 0;"></p>
+        <div class="mb-confirm-actions">
+          <button class="mb-confirm-cancel" type="button">Cancel</button>
+          <button class="mb-confirm-ok" type="button">Redeem</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  const input = overlay.querySelector('#mb-voucher-input');
+  const errEl = overlay.querySelector('#mb-voucher-error');
+  const okBtn = overlay.querySelector('.mb-confirm-ok');
+  const cancelBtn = overlay.querySelector('.mb-confirm-cancel');
+
+  input.value = '';
+  errEl.style.display = 'none';
+  errEl.textContent = '';
+
+  const cleanup = () => {
+    overlay.classList.remove('visible');
+    okBtn.onclick = null;
+    cancelBtn.onclick = null;
+    overlay.onclick = null;
+    input.onkeydown = null;
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') cleanup(); };
+
+  const submit = async () => {
+    const code = input.value.trim();
+    if (!code) { errEl.textContent = 'Enter a code.'; errEl.style.display = 'block'; return; }
+    okBtn.disabled = true; okBtn.textContent = 'Checking…';
+    const r = await redeemVoucher(code);
+    okBtn.disabled = false; okBtn.textContent = 'Redeem';
+    if (r.ok && r.changed) {
+      cleanup();
+      UI.toast(`Unlocked — limit is now ${r.limit} sources.`);
+      // Refresh the Discover buttons so previously-"Full" sources become addable
+      if (window.Discover && typeof window.Discover.refresh === 'function') {
+        window.Discover.refresh();
+      }
+    } else if (r.ok && !r.changed) {
+      cleanup();
+      UI.toast(`That code unlocks ${r.limit} — you're already at or above that.`);
+    } else {
+      errEl.textContent = r.reason === 'invalid' ? 'That code isn\'t valid.' : 'Something went wrong.';
+      errEl.style.display = 'block';
+      input.focus();
+      input.select();
+    }
+  };
+
+  okBtn.onclick = submit;
+  cancelBtn.onclick = cleanup;
+  overlay.onclick = (e) => { if (e.target === overlay) cleanup(); };
+  input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
+  document.addEventListener('keydown', onKey);
+
+  overlay.classList.add('visible');
+  setTimeout(() => input.focus(), 50);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // USER ACTIONS — orchestrate State → Persist → Sync → UI
 // All awaits on Sync are propagated so failures can be surfaced.
 // ═══════════════════════════════════════════════════════════════════════
@@ -3326,7 +3476,12 @@ async function addSource(name, url) {
 
   if (!result.ok) {
     if (result.reason === 'limit') {
-      UI.toast(`Twenty sources is the limit — a focused feed is the whole idea. Remove one to add another.`);
+      // Open voucher prompt directly. User can cancel — the message below
+      // tells them why it opened.
+      UI.toast(
+        `Reached the ${State.getLimit()}-source limit. Have a voucher code?`,
+        { duration: 5000, actionText: 'Enter code', action: () => promptVoucher() }
+      );
     } else if (result.reason === 'duplicate_rss') {
       const dup = State.getSources().find(s => s.rss === url);
       UI.toast(`Already added as "${dup?.name || 'another source'}".`);

@@ -33,12 +33,24 @@ window.MB_CONFIG = Object.freeze({
   LAST_SESSION_KEY:    'morning_brief_last_session',
   INSTALL_DISMISSED_KEY: 'morning_brief_install_dismissed',
   ANALYTICS_OPTOUT_KEY: 'morning_brief_analytics_optout',
+  VOUCHER_LIMIT_KEY:   'morning_brief_voucher_limit',
 
   // ── Behavior tuning ──────────────────────────────────────────────────
   MAX_SOURCES:       20,
+  MAX_SOURCES_HARD_CAP: 200,  // ceiling even voucher codes can't exceed
   FETCH_TIMEOUT:     5000,
   FETCH_CONCURRENCY: 5,
   ARTICLES_PER_SOURCE: 5,
+
+  // ── Voucher codes ────────────────────────────────────────────────────
+  // Map of SHA-256 hashed codes to the limit they unlock.
+  // Hashing is obscurity, not security — but fine for a personal tool.
+  // To add a new code: run `sha256('YOURCODE')` and paste the hex here.
+  //   MANOTUTU -> 50
+  VOUCHERS: {
+    // SHA-256('MANOTUTU') → 50 sources
+    'fd021c1c743deec215e7183e575fb545411dce6dd130f76555cb3ce21eb710ae': 50
+  },
 
   // Install prompt trigger: show after Nth session AND Mth source
   INSTALL_MIN_SESSIONS: 2,

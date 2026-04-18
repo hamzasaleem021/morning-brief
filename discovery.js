@@ -55,7 +55,7 @@
 
   function updateStats(data) {
     const userCount = State.getCount();
-    const max = CFG.MAX_SOURCES;
+    const max = State.getLimit();
     document.getElementById('stat-categories').textContent = Object.keys(data.categories).length;
     document.getElementById('stat-total').textContent = data.source_count || '—';
     const yours = document.getElementById('stat-yours');
@@ -114,7 +114,7 @@
 
   function renderSourceCard(src) {
     const added = State.hasByRss(src.url);
-    const full = State.getCount() >= CFG.MAX_SOURCES && !added;
+    const full = State.getCount() >= State.getLimit() && !added;
     const disabledAttr = (added || full) ? 'disabled' : '';
     const cls = added ? 'source-card added' : 'source-card';
     const btnCls = added ? 'source-card-add added' : 'source-card-add';
@@ -169,7 +169,7 @@
   async function bulkAdd(list, successMsg) {
     let added = 0, skipped = 0;
     for (const src of list) {
-      if (State.getCount() >= CFG.MAX_SOURCES) { skipped++; continue; }
+      if (State.getCount() >= State.getLimit()) { skipped++; continue; }
       if (State.hasByRss(src.url)) { skipped++; continue; }
       // addSource() is on window (exposed by main HTML)
       const result = await window.addSource(src.name, src.url);
@@ -281,6 +281,12 @@
     document.getElementById('discover-overlay')?.classList.remove('open');
   }
 
+  // Public refresh — used by voucher redemption to re-render "Full" buttons
+  // after the limit changes. Safe to call when catalog isn't loaded.
+  function refresh() {
+    if (catalog) renderContent();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────
   function init() {
     setupHandlers();
@@ -293,5 +299,5 @@
     init();
   }
 
-  window.Discover = { open, close };
+  window.Discover = { open, close, refresh };
 })();
