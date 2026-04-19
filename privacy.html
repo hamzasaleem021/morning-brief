@@ -1,285 +1,297 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f5f0e8">
-  <title>Privacy Policy - Morning Brief</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #f5f0e8;
-      --paper: #faf7f2;
-      --ink: #1a1814;
-      --ink-light: #4a4540;
-      --ink-muted: #9a9590;
-      --rule: #e0d8cc;
-      --accent: #c8502a;
-      --display: 'Playfair Display', Georgia, serif;
-      --body: 'DM Sans', sans-serif;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5f0e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141210" media="(prefers-color-scheme: dark)">
+<title>Privacy — Morning Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  (function() {
+    try {
+      var t = localStorage.getItem('morning_brief_theme') || 'auto';
+      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      else if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+      else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    } catch(e) {}
+  })();
+</script>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --paper: #faf7f2;
+    --ink: #1a1814;
+    --ink-light: #4a4540;
+    --ink-muted: #9a9590;
+    --rule: #e0d8cc;
+    --accent: #c8502a;
+    --accent-soft: #f0e8e0;
+    --display: 'Playfair Display', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+    --body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  [data-theme="dark"] {
+    --bg: #141210;
+    --paper: #1e1b18;
+    --ink: #e8e4dc;
+    --ink-light: #b8b4ac;
+    --ink-muted: #6b6560;
+    --rule: #2e2a26;
+    --accent: #d4603a;
+    --accent-soft: #2a1f18;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141210;
+      --paper: #1e1b18;
+      --ink: #e8e4dc;
+      --ink-light: #b8b4ac;
+      --ink-muted: #6b6560;
+      --rule: #2e2a26;
+      --accent: #d4603a;
+      --accent-soft: #2a1f18;
     }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      font-family: var(--body);
-      background: var(--bg);
-      color: var(--ink);
-      line-height: 1.7;
-      padding: 40px 20px;
-    }
-    
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: var(--paper);
-      padding: 48px;
-      border-radius: 8px;
-      border: 1px solid var(--rule);
-    }
-    
-    h1 {
-      font-family: var(--display);
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--ink);
-    }
-    
-    .date {
-      color: var(--ink-muted);
-      font-size: 0.9rem;
-      margin-bottom: 32px;
-      display: block;
-    }
-    
-    h2 {
-      font-family: var(--display);
-      font-size: 1.5rem;
-      margin-top: 40px;
-      margin-bottom: 16px;
-      color: var(--accent);
-    }
-    
-    h3 {
-      font-family: var(--display);
-      font-size: 1.2rem;
-      margin-top: 24px;
-      margin-bottom: 12px;
-      color: var(--ink);
-    }
-    
-    p {
-      margin-bottom: 16px;
-      color: var(--ink-light);
-    }
-    
-    ul {
-      margin-bottom: 16px;
-      padding-left: 24px;
-      color: var(--ink-light);
-    }
-    
-    li {
-      margin-bottom: 8px;
-    }
-    
-    strong {
-      color: var(--ink);
-      font-weight: 500;
-    }
-    
-    code {
-      background: var(--bg);
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Monaco', 'Courier New', monospace;
-      font-size: 0.9em;
-      color: var(--accent);
-    }
-    
-    a {
-      color: var(--accent);
-      text-decoration: none;
-      border-bottom: 1px solid transparent;
-      transition: border-color 0.2s;
-    }
-    
-    a:hover {
-      border-bottom-color: var(--accent);
-    }
-    
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 48px;
-      padding: 12px 24px;
-      background: var(--ink);
-      color: var(--paper);
-      border-radius: 20px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-    
-    .back-link:hover {
-      background: var(--accent);
-      border-bottom-color: transparent;
-      transform: translateY(-1px);
-    }
-    
-    @media (max-width: 768px) {
-      .container {
-        padding: 32px 24px;
-      }
-      
-      h1 {
-        font-size: 2rem;
-      }
-    }
-  </style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    min-height: 100vh;
+    line-height: 1.6;
+    transition: background 0.3s, color 0.3s;
+  }
+  .masthead {
+    border-bottom: 3px double var(--ink);
+    padding: 32px 32px 20px;
+    text-align: center;
+    background: var(--paper);
+  }
+  .masthead-top {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+  }
+  .masthead h1 {
+    font-family: var(--display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .masthead-rule {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 14px 0 4px;
+  }
+  .masthead-rule span {
+    height: 1px;
+    width: 80px;
+    background: var(--ink);
+  }
+  .masthead-rule em {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+  }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+  .section {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  .section h2 {
+    font-family: var(--display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section p {
+    font-size: 0.95rem;
+    color: var(--ink-light);
+    margin-bottom: 14px;
+    line-height: 1.8;
+  }
+  .section p:last-child { margin-bottom: 0; }
+  .section ul {
+    margin: 8px 0 16px 24px;
+    color: var(--ink-light);
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+  .section ul li { margin-bottom: 6px; }
+  .section strong { color: var(--ink); font-weight: 500; }
+  .section code {
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.85em;
+    color: var(--accent);
+  }
+  .highlight {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-family: var(--display);
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  footer {
+    border-top: 3px double var(--ink);
+    padding: 24px 32px;
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .back-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    font-size: 0.82rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .back-link:hover { text-decoration: underline; }
+  .last-updated {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-top: 24px;
+    font-family: var(--display);
+    font-style: italic;
+  }
+
+  @media (max-width: 600px) {
+    .masthead { padding: 24px 16px 18px; }
+    main { padding: 32px 16px 60px; }
+    .section { padding: 20px 22px; }
+    .section h2 { font-size: 1.15rem; }
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Privacy Policy</h1>
-    <span class="date">Last updated: March 28, 2026</span>
-    
-    <p>Morning Brief is designed with your privacy in mind. This policy explains what data we collect, how we use it, and your rights regarding your information.</p>
-
-    <h2>What We Collect</h2>
-    
-    <h3>Analytics Data (Amplitude)</h3>
-    <p>We use Amplitude Analytics to understand how people use Morning Brief. This helps us improve the app and fix bugs. We collect:</p>
-    <ul>
-      <li><strong>Anonymous device identifiers</strong> — A random ID assigned to your browser (not your personal information)</li>
-      <li><strong>Feature usage</strong> — Which buttons you click, sources you add/remove, how often you refresh</li>
-      <li><strong>Session information</strong> — When you open the app, how long you use it</li>
-      <li><strong>Technical data</strong> — Browser type, device type, screen size</li>
-    </ul>
-    <p>We do NOT collect your IP address or any personally identifiable information through analytics.</p>
-
-    <h3>Account Data (Google OAuth & Supabase)</h3>
-    <p>If you choose to enable cloud sync, we collect:</p>
-    <ul>
-      <li><strong>Email address</strong> — Used only for authentication and magic link login</li>
-      <li><strong>Google profile info</strong> — Name and profile picture (if signing in with Google)</li>
-      <li><strong>Your RSS sources</strong> — The list of RSS feeds you've added (stored encrypted in Supabase)</li>
-    </ul>
-
-    <h2>What We Don't Collect</h2>
-    <ul>
-      <li><strong>Your RSS feed URLs</strong> — Not shared with analytics (only stored for your sync)</li>
-      <li><strong>Article content</strong> — We never store or analyze what you read</li>
-      <li><strong>Browsing history</strong> — We only track activity within Morning Brief</li>
-      <li><strong>Location data</strong> — No GPS or precise location tracking</li>
-      <li><strong>Social media activity</strong> — We don't track what you do outside this app</li>
-    </ul>
-
-    <h2>How We Use Data</h2>
-    
-    <p><strong>We never sell your data or share it with third parties for advertising purposes.</strong> Your data is used solely for the following purposes:</p>
-    
-    <h3>Analytics Data</h3>
-    <p>Used to:</p>
-    <ul>
-      <li>Understand which features are popular and improve them</li>
-      <li>Identify and fix bugs</li>
-      <li>See how many people use the app daily</li>
-      <li>Make data-driven decisions about new features</li>
-    </ul>
-    <p>All analytics data is aggregated and anonymous. We can't identify individual users from this data.</p>
-
-    <h3>Account & Sync Data</h3>
-    <p>Used to:</p>
-    <ul>
-      <li>Authenticate your account via magic link or Google OAuth</li>
-      <li>Sync your RSS sources across all your devices</li>
-      <li>Enable real-time updates when you add/remove sources</li>
-    </ul>
-
-    <h2>Third-Party Services</h2>
-    
-    <h3>Amplitude Analytics</h3>
-    <p>
-      Analytics platform for anonymous usage tracking.<br>
-      Privacy policy: <a href="https://amplitude.com/privacy" target="_blank">amplitude.com/privacy</a>
-    </p>
-
-    <h3>Supabase</h3>
-    <p>
-      Backend database for account authentication and cloud sync.<br>
-      Privacy policy: <a href="https://supabase.com/privacy" target="_blank">supabase.com/privacy</a>
-    </p>
-
-    <h3>Google OAuth</h3>
-    <p>
-      Sign-in service (optional, only if you use cloud sync).<br>
-      Privacy policy: <a href="https://policies.google.com/privacy" target="_blank">policies.google.com/privacy</a>
-    </p>
-
-    <h3>Cloudflare Workers</h3>
-    <p>
-      RSS feed proxy service. No data is stored — feeds are fetched and immediately returned to you.<br>
-      Privacy policy: <a href="https://cloudflare.com/privacy" target="_blank">cloudflare.com/privacy</a>
-    </p>
-
-    <h2>Data Storage & Security</h2>
-    
-    <h3>Local Storage</h3>
-    <p>Your RSS sources and app preferences are stored in your browser's local storage. This data never leaves your device unless you enable cloud sync.</p>
-
-    <h3>Cloud Sync (Optional)</h3>
-    <p>If you sign in with email or Google, your RSS sources are encrypted and stored in Supabase. This allows you to access your sources from multiple devices.</p>
-
-    <h3>Data Retention</h3>
-    <ul>
-      <li><strong>Analytics</strong> — Retained for 1 year (Amplitude free tier)</li>
-      <li><strong>Account data</strong> — Retained until you delete your account</li>
-      <li><strong>Local data</strong> — Stored until you clear browser data</li>
-    </ul>
-
-    <h2>Your Rights</h2>
-    
-    <h3>Opt Out of Analytics</h3>
-    <p>You can disable analytics tracking at any time. Once disabled, no usage data will be sent to Amplitude.</p>
-
-    <h3>Delete Your Account Data</h3>
-    <p>To delete your synced data:</p>
-    <ol>
-      <li>Sign out of your account in the app</li>
-      <li>Clear your browser's local storage</li>
-      <li>Email us to request deletion of server-side data</li>
-    </ol>
-
-    <h3>Access Your Data</h3>
-    <p>You can view all your synced RSS sources in the "Manage Sources" section of the app. To request a copy of all data we have about you, contact us via email.</p>
-
-    <h2>Cookies</h2>
-    <p>Morning Brief uses minimal cookies:</p>
-    <ul>
-      <li><strong>Amplitude cookie</strong> — Stores your anonymous device ID for analytics</li>
-      <li><strong>Supabase session cookie</strong> — Keeps you logged in (if using cloud sync)</li>
-      <li><strong>Local storage</strong> — Stores your RSS sources and theme preference</li>
-    </ul>
-    <p>No third-party advertising or tracking cookies are used.</p>
-
-    <h2>Children's Privacy</h2>
-    <p>Morning Brief is not intended for children under 13. We do not knowingly collect data from children. If you believe a child has provided us with personal information, please contact us.</p>
-
-    <h2>Changes to This Policy</h2>
-    <p>We may update this privacy policy from time to time. Changes will be posted on this page with an updated "Last updated" date. Continued use of Morning Brief after changes constitutes acceptance of the updated policy.</p>
-
-    <h2>Contact</h2>
-    <p>Questions about privacy or data practices?</p>
-    <p>Email: <a href="mailto:auxilusdigital@gmail.com">auxilusdigital@gmail.com</a></p>
-
-    <a href="./morning-brief.html" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"/>
-        <polyline points="12 19 5 12 12 5"/>
-      </svg>
-      Back to Morning Brief
-    </a>
+  <div class="masthead">
+    <div class="masthead-top">Privacy Policy</div>
+    <h1>Your Data, Your Call</h1>
+    <div class="masthead-rule">
+      <span></span>
+      <em>What we collect, why, and how you can opt out.</em>
+      <span></span>
+    </div>
   </div>
+
+  <main>
+    <a href="./morning-brief.html" class="back-link">← Back to Morning Brief</a>
+
+    <div class="section">
+      <h2>The short version</h2>
+      <div class="highlight">
+        Morning Brief is a personal intelligence tool. We store only what's needed to make it work across your devices — nothing more. No behavioral tracking, no ads, no data sales.
+      </div>
+      <p>This policy tells you exactly what's stored, where, and how to delete it.</p>
+    </div>
+
+    <div class="section">
+      <h2>What we store</h2>
+      <p><strong>On your device (always):</strong></p>
+      <ul>
+        <li>Your list of RSS sources (name, URL, display order, color assignment)</li>
+        <li>Your theme preference (light, dark, or auto)</li>
+        <li>Session counts used to decide when to suggest installing the app to your home screen</li>
+      </ul>
+      <p>These live only in your browser's <code>localStorage</code>. Clearing your browser data removes them.</p>
+
+      <p><strong>In the cloud (only if you sign in):</strong></p>
+      <ul>
+        <li>Your email address (to send you the sign-in link)</li>
+        <li>Your source list (so it can appear on your other devices)</li>
+      </ul>
+      <p>That's it. We don't store what you read, when you read it, or which articles you opened.</p>
+    </div>
+
+    <div class="section">
+      <h2>What we don't collect</h2>
+      <ul>
+        <li><strong>Reading history.</strong> Articles you open are tracked by your browser, not by us.</li>
+        <li><strong>Click data.</strong> When you click through to an article, your browser handles it directly. We don't proxy, log, or measure it.</li>
+        <li><strong>Behavioral analytics.</strong> No Google Analytics, no Facebook Pixel, no Mixpanel. This build of Morning Brief includes no third-party tracking whatsoever.</li>
+        <li><strong>IP address logs.</strong> We don't keep access logs beyond what Supabase requires for security.</li>
+        <li><strong>Cookies for tracking.</strong> We use a single cookie for your authentication session when signed in. That's all.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>The RSS proxy</h2>
+      <p>RSS feeds are fetched through a Cloudflare Worker to handle CORS. The proxy:</p>
+      <ul>
+        <li>Sees the URL of the RSS feed you're fetching</li>
+        <li>Does <strong>not</strong> log which user requested which feed</li>
+        <li>Does <strong>not</strong> store feed contents</li>
+        <li>Does <strong>not</strong> modify responses</li>
+      </ul>
+      <p>Your IP address is visible to Cloudflare during the request, as with any web request.</p>
+    </div>
+
+    <div class="section">
+      <h2>Authentication</h2>
+      <p>Sign-in uses Supabase magic links. There's no password to manage — we email you a one-time link. Your email is stored in Supabase's <code>auth.users</code> table, and a session cookie is set when you're signed in.</p>
+      <p>You can sign out at any time from within the app, which removes the session cookie. To delete your account entirely, reach out and we'll remove your row from the database.</p>
+    </div>
+
+    <div class="section">
+      <h2>Your rights</h2>
+      <ul>
+        <li><strong>Use without signing in.</strong> All core functionality works without an account. Sync is optional.</li>
+        <li><strong>Delete your local data.</strong> Clear your browser storage, or use the "Remove" button on each source.</li>
+        <li><strong>Delete your synced data.</strong> Sign out to stop syncing, or contact us to remove your cloud record entirely.</li>
+        <li><strong>Export your sources.</strong> Your source list lives in <code>localStorage</code> as JSON. You can view and export it directly from your browser's DevTools.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Changes to this policy</h2>
+      <p>If we ever change what we store or how — for example, by adding analytics — we will clearly announce it in-app and in the CHANGELOG before any change takes effect. Every shipped version of Morning Brief preserves the promise on this page.</p>
+    </div>
+
+    <p class="last-updated">Last updated: April 2026</p>
+  </main>
+
+  <footer>
+    <div>Morning Brief — yours alone</div>
+    <div style="margin-top: 8px;">
+      <a href="./morning-brief.html">Return to app</a>
+    </div>
+  </footer>
 </body>
 </html>

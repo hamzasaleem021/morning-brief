@@ -1,3 +1,51 @@
+# Changelog
+
+## v10 — The Coherence Release
+
+Major refactor focused on data integrity, design coherence, and onboarding.
+
+### Fixed (data integrity — highest priority)
+- **Sync failures no longer silent.** `Sync.push()` now returns `{ok, error}` and failures surface as a persistent banner with retry. Previous behavior caused silent cloud-local divergence.
+- **Source colors no longer collide.** Colors are now assigned inside `State.addSource()` using an "unused first" strategy. The 8-color flat palette has been replaced with a generated HSL wheel — 20 distinct, accent-anchored tones.
+- **Source IDs now use `crypto.randomUUID()`.** Previously `Date.now()` was used, which collided under rapid clicks.
+- **Cache corruption no longer wipes sources.** Corrupt order-key parse is now isolated from source-key parse (each has its own try/catch).
+
+### Added
+- **Pull-to-refresh** on mobile (the welcome copy now matches reality).
+- **Scroll-spy** on the pill nav — active pill updates as you scroll.
+- **Focus trap** in modals + Escape-to-close.
+- **Enter-to-submit** on the Add Source and sign-in inputs.
+- **Magic-link UX pass**: inline submit button, client-side email validation, "Open Gmail/Outlook/Yahoo" deep-link after send.
+- **Starter pack + curated bundles** in Discover — one-click add-all for new users.
+- **`prefers-reduced-motion`** honored throughout.
+- **Multi-tab theme sync** via storage events.
+- **Touch-aware drag reorder** — works on iOS Safari without external libraries.
+
+### Changed
+- **Discover rebuilt in the app's design language.** Same modal shell, same button treatment, same palette. Purple gradient, stoplight stats, and parallel toast system are gone.
+- **Install prompt retimed.** No longer shown on first visit. Appears after 2 sessions AND 3 sources. New bottom-anchored card design.
+- **iOS install hint** is now a proper instructional card with numbered steps, not a fading tooltip.
+- **Welcome state** when zero sources: opens Discover directly instead of the empty "Add by URL" form.
+- **Privacy page** now inherits the app's stylesheet and supports dark mode.
+- **Masthead mobile layout reworked** — theme toggle and sync indicator moved to absolute-positioned slots, content condensed.
+- **Tablet portrait breakpoint added** (700–999px) — iPad no longer gets the phone layout.
+- **Excerpt parser** prefers `content:encoded`, strips HTML via safer `DOMParser('text/html')`, truncates at word boundaries, and renders nothing (not "Invalid Date") for malformed dates.
+- **Error banner** now derives visibility from a `failedSources` Set — individual retries correctly clear it.
+- **Custom SVG illustrations** replace emoji in welcome state and drag handle.
+- **Service worker** cache-first with strict response gating; update prompt prompts user before reload; first-install no longer triggers a spurious reload.
+
+### Removed
+- **Amplitude SDK and all analytics calls.** `config.js` ships with `AMPLITUDE_KEY: null` — no tracking of any kind by default. This resolves the contradiction with the "no tracking" pitch on the welcome screen.
+- **Unused font weights** (Playfair 400, DM Sans 300) — smaller font payload.
+
+### Architecture
+- **New `config.js`** centralizes every constant. Fork-friendly — deployment changes live in one file.
+- **Realtime echo suppression** via a client nonce embedded in each push.
+- **Retry logic** triggers on `online` and `focus` events, plus manual retry button.
+- **All push awaits** now propagate through `addSource`, `removeSource`, and drag-reorder.
+
+---
+
 # Changelog — Pareto refactor pass
 
 This pass addresses the top-priority findings from the evaluation. All changes preserve the 4-layer architecture (State → Persist → Sync → UI).
