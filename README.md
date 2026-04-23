@@ -1,147 +1,129 @@
-# Morning Brief
+# Open Loops
 
-> Your sources. Your signal. Every morning.
+**A calm place for unfinished things.**
 
-A focused RSS reader that holds up to 20 feeds and presents them as a daily personal brief. No algorithm. No ads. No reading history. Just the publications you've chosen, fetched fresh, in the order you want.
+Open Loops is a local-first PWA for capturing the thoughts that occupy headspace — the half-decisions, the pending asks, the things you keep meaning to do. It gives each one a shape, surfaces only a few at a time, and gets out of the way.
 
-## What it is
+![Open Loops](open-loops-icon-192.png)
 
-- A PWA (Progressive Web App) — install to your home screen, works offline after first load
-- Single-file app: `morning-brief.html` contains the full UI and logic
-- Up to 20 RSS sources; each gets its own section with the 5 latest posts
-- Dark mode, drag-reorder, scroll-spy nav, pull-to-refresh
-- Optional magic-link sync across devices via Supabase
-- No tracking, no analytics, no ads (see `privacy.html`)
+---
 
-## Files
+## What it does
 
-```
-morning-brief.html       — Main app (CSS + JS inline by design)
-config.js                — All tunable constants; fork-friendly
-sw.js                    — Service worker (offline + update prompt)
-discovery.js             — Source catalog browser ("Discover")
-discovery-sources.json   — 1,250 curated RSS feeds across 67 categories
-privacy.html             — Privacy policy (shares the app's stylesheet)
-manifest.json            — PWA manifest
-icon-192.png, icon-512.png — App icons
-```
+Most productivity tools want you to manage everything. Open Loops does one thing: it helps you stop holding things in your head.
 
-## Architecture
+You capture a thought. You clarify it into one of five kinds. You keep only five things in active focus. That's it.
 
-A strict 4-layer flow for all source operations:
+**Five kinds of loop:**
 
-```
-State → Persist → Sync → UI
-```
+| Kind | What it means |
+|------|--------------|
+| **Do** | A concrete action you can start now |
+| **Decide** | A decision that needs to be named and made |
+| **Ask** | Something you need from a specific person |
+| **Schedule** | Something that needs time on a calendar |
+| **Let go** | Something you're choosing to release |
 
-- **State**: sole owner of the in-memory source list. Assigns source colors internally.
-- **Persist**: write-through cache to localStorage. Never read for decisions.
-- **Sync**: Supabase pull on login, push on every change, realtime subscription with self-echo suppression. Returns `{ok, error}` for every push — failures surface as a persistent banner.
-- **UI**: reads only from State. Never touches localStorage or Supabase directly.
+---
 
-This separation keeps bugs rare: a sync failure cannot cause UI drift, and a UI action cannot skip persistence.
+## Features
 
-## Self-hosting
+- **Capture** — Drop a thought as it arrives. Shape it later, or clarify it immediately.
+- **5-loop focus cap** — Only 5 active loops visible at once. The constraint is the feature.
+- **Inline editing** — Click any loop title to edit it in place.
+- **Primary actions** — Each loop kind has a contextual check-in: done, still in progress, or update the next step.
+- **Waiting & Released** — Park things without losing them. Let go of things without deleting them.
+- **Local-first** — Works entirely offline. No account required.
+- **Cross-device sync** — Optional Supabase backend for sync across devices via magic link.
+- **PWA** — Installable on desktop and mobile. Works like a native app.
 
-Fork this repo and edit `config.js`:
+---
 
-```js
-window.MB_CONFIG = {
-  RSS_PROXY:    '...your Cloudflare Worker URL...',
-  SUPABASE_URL: '...your Supabase project URL...',
-  SUPABASE_KEY: '...your sb_publishable_ key...',
-  AMPLITUDE_KEY: null,       // null disables analytics entirely
-  // ...
-};
-```
+## Getting started
 
-### Supabase setup (required if you want sync)
-
-You **must** configure Row Level Security before deploying publicly. The shipped `sb_publishable_` key is designed to be client-side safe, but only with proper RLS policies on the `user_configs` table.
-
-Minimum required schema:
-
-```sql
-create table public.user_configs (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  config_data jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.user_configs enable row level security;
-
-create policy "users read own config" on public.user_configs
-  for select using (auth.uid() = user_id);
-
-create policy "users upsert own config" on public.user_configs
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-create or replace function public.get_user_config(p_user_id uuid)
-returns setof public.user_configs language sql security invoker as $$
-  select * from public.user_configs where user_id = p_user_id and auth.uid() = p_user_id;
-$$;
-
-create or replace function public.upsert_user_config(p_user_id uuid, p_config_data jsonb)
-returns public.user_configs language plpgsql security invoker as $$
-declare result public.user_configs; begin
-  insert into public.user_configs (user_id, config_data, updated_at)
-  values (p_user_id, p_config_data, now())
-  on conflict (user_id) do update set config_data = excluded.config_data, updated_at = now()
-  where public.user_configs.user_id = auth.uid()
-  returning * into result;
-  return result;
-end; $$;
-```
-
-Test that RLS is actually blocking cross-user reads before deploying. Authenticate as user A in one tab, attempt to query user B's row — it must return zero rows.
-
-### RSS proxy
-
-The proxy exists to bypass CORS on RSS feeds. A minimal Cloudflare Worker:
-
-```js
-export default {
-  async fetch(request) {
-    const url = new URL(request.url).searchParams.get('url');
-    if (!url) return new Response('Missing url param', { status: 400 });
-    const res = await fetch(url);
-    const body = await res.text();
-    return new Response(body, {
-      headers: {
-        'Content-Type': res.headers.get('Content-Type') || 'application/xml',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
-  }
-};
-```
-
-## Install prompt
-
-The install prompt isn't shown on first visit. It appears once the user has:
-- Visited at least 2 separate sessions (30-min idle threshold)
-- Added at least 3 sources
-
-On iOS, a separate "Add to Home Screen" hint with Share-icon instructions appears under the same conditions.
-
-## Key design decisions
-
-- **One-file philosophy preserved.** CSS and JS stay inline in `morning-brief.html`. The single-file approach is part of the product — simple to deploy, easy to audit, easy to fork.
-- **Source colors are generated, not picked from a palette.** An HSL wheel rotating from the accent color (`#c8502a`) produces 20 unique, harmonious colors that sit comfortably on the ivory background and adapt to dark mode.
-- **20-source limit is a feature.** A focused feed is the whole idea. Raising this would turn Morning Brief into a feed aggregator.
-- **No Amplitude by default.** The `AMPLITUDE_KEY` in `config.js` ships as `null`. Setting it to a real key enables tracking — if you do, update `privacy.html` and the welcome copy to disclose it.
-
-## Development
-
-No build step. Open `morning-brief.html` in a browser or serve the directory statically:
+### Run locally
 
 ```bash
-python3 -m http.server 8000
-# then visit http://localhost:8000/morning-brief.html
+python -m http.server 8000
 ```
 
-For service-worker testing, serve with HTTPS (use `ngrok` or similar) or test on localhost.
+Then open: [http://localhost:8000/open-loops.html](http://localhost:8000/open-loops.html)
+
+No build step. No dependencies. One HTML file.
+
+### Deploy to GitHub Pages
+
+1. Push this repository to GitHub.
+2. Go to **Settings → Pages → Deploy from branch**.
+3. Select your main branch, root folder.
+4. Your app will be live at `https://YOUR_USERNAME.github.io/REPO_NAME/open-loops.html`.
+
+---
+
+## Sync setup (optional)
+
+Open Loops works fully without sync. If you want your loops on every device:
+
+### 1. Create a Supabase project
+
+[supabase.com](https://supabase.com) → New project.
+
+### 2. Run the SQL
+
+In the Supabase SQL editor, run `open-loops-supabase.sql`.
+
+### 3. Configure the app
+
+Edit `open-loops-config.js`:
+
+```js
+window.OL_CONFIG = {
+  SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
+  SUPABASE_KEY: 'YOUR_PUBLISHABLE_KEY',
+  EMAIL_REDIRECT_TO: null, // null = uses current page URL automatically
+};
+```
+
+### 4. Add redirect URLs
+
+In Supabase → **Authentication → URL Configuration**, add:
+
+```
+http://localhost:8000/open-loops.html
+https://YOUR_USERNAME.github.io/REPO_NAME/open-loops.html
+```
+
+### 5. Sign in
+
+Open the app, tap **Sync** in the top bar, enter your email. You'll receive a magic link — no password needed.
+
+---
+
+## File structure
+
+```
+open-loops.html          ← The entire app (HTML + CSS + JS, single file)
+open-loops-config.js     ← Supabase credentials (edit this for sync)
+open-loops-supabase.sql  ← Database schema + RLS policies
+open-loops-sw.js         ← Service worker (offline support)
+open-loops-manifest.json ← PWA manifest
+open-loops-icon-192.png  ← App icon
+open-loops-icon-512.png  ← App icon (large)
+open-loops-setup.md      ← Quick setup reference
+index.html               ← Redirects to open-loops.html
+```
+
+---
+
+## Design principles
+
+- **One file.** The entire app is `open-loops.html`. No framework, no bundler, no node_modules.
+- **Local-first.** Data lives in `localStorage`. Supabase is an optional layer on top.
+- **Intentional constraints.** Five loops in active focus. Five kinds. Three statuses. The limits are features.
+- **No noise.** No notifications, no streaks, no gamification. Calm is the aesthetic and the function.
+
+---
 
 ## License
 
-MIT.
+MIT. Use it, fork it, make it yours.
