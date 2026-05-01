@@ -1791,6 +1791,20 @@
   /* ═════════════════════════════════════════════════════════════════════
      VOUCHER — discovery link + proper unlock modal + persistent badge
      ═════════════════════════════════════════════════════════════════════ */
+  .install-app-row {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    font-family: var(--body);
+  }
+  .install-app-text { color: var(--ink-muted); }
+
   .voucher-entry {
     margin-top: 22px;
     padding-top: 18px;
@@ -2187,6 +2201,10 @@
           <input type="url" class="form-input" id="new-source-url" placeholder="https://example.com/rss" autocomplete="off" inputmode="url">
           <button type="button" class="btn-add-source" id="add-source-btn">Add</button>
         </div>
+      </div>
+      <div class="install-app-row" id="install-app-row" style="display:none;">
+        <span class="install-app-text">Use as a standalone app</span>
+        <button type="button" class="voucher-link" id="install-app-btn">Install</button>
       </div>
       <div class="voucher-entry">
         <span class="voucher-entry-text" id="voucher-entry-text">Need more than 20 sources?</span>
@@ -3936,6 +3954,9 @@ function triggerInstall() {
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstall = e;
+  // Always show the persistent install option in Manage Sources
+  const installRow = document.getElementById('install-app-row');
+  if (installRow) installRow.style.display = '';
   // Check eligibility, but delay briefly so page renders first
   setTimeout(() => {
     if (shouldOfferInstall()) showInstallPrompt();
@@ -3945,6 +3966,8 @@ window.addEventListener('beforeinstallprompt', e => {
 window.addEventListener('appinstalled', () => {
   dismissInstallPrompt(true);
   deferredInstall = null;
+  const installRow = document.getElementById('install-app-row');
+  if (installRow) installRow.style.display = 'none';
 });
 
 
@@ -4007,6 +4030,7 @@ function setupEventDelegation() {
     // Install card
     if (t.closest('#install-accept')) { triggerInstall(); return; }
     if (t.closest('#install-dismiss')) { dismissInstallPrompt(true); return; }
+    if (t.closest('#install-app-btn')) { triggerInstall(); return; }
     if (t.closest('#ios-hint-close')) {
       document.getElementById('ios-hint').classList.remove('visible');
       try { localStorage.setItem(CFG.INSTALL_DISMISSED_KEY, 'true'); } catch(e) {}
