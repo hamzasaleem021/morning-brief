@@ -7,7 +7,6 @@
   "display": "standalone",
   "background_color": "#f5f0e8",
   "theme_color": "#f5f0e8",
-  "orientation": "any",
   "categories": ["news", "productivity", "lifestyle"],
   "icons": [
     {
