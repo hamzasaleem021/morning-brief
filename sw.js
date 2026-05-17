@@ -1,6 +1,6 @@
 // Morning Brief — Service Worker
 // Cache version bumped on every release. External APIs are never cached.
-const CACHE = 'morning-brief-v14';
+const CACHE = 'morning-brief-v15';
 
 const ASSETS = [
   './morning-brief.html',
@@ -33,8 +33,7 @@ self.addEventListener('install', e => {
           .then(r => r.ok ? c.put(a, r) : null)
           .catch(() => null)        // clippings.js may 404 on first install — tolerate
       ))
-    )
-    // Intentionally NO skipWaiting — the page prompts the user first.
+    ).then(() => self.skipWaiting())
   );
 });
 
