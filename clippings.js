@@ -69,6 +69,10 @@
     return parts.length <= 2 ? parts.join('.') : parts.slice(-2).join('.');
   }
 
+  function compactName(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
   function toast(msg, opts) {
     if (window.UI && typeof UI.toast === 'function') UI.toast(msg, opts || {});
   }
@@ -92,13 +96,33 @@
     if (!host) return null;
     const articleRoot = rootDomain(host);
     const sources = (window.State && State.getSources) ? State.getSources() : [];
+    const meta = lookupArticleMeta(articleUrl);
+
+    if (meta && meta.sourceId) {
+      const byMetaId = sources.find(s => s.id === meta.sourceId);
+      if (byMetaId) return byMetaId;
+    }
 
     // Exact (after www-strip) first
     const exact = sources.find(s => stripWWW(s.domain) === stripWWW(host));
     if (exact) return exact;
     // Root-domain fallback (handles feeds.arstechnica.com → arstechnica.com)
     const fuzzy = sources.find(s => rootDomain(s.domain) === articleRoot);
-    return fuzzy || null;
+    if (fuzzy) return fuzzy;
+
+    const rssHost = sources.find(s => {
+      if (!s.rss) return false;
+      try { return rootDomain(new URL(s.rss).hostname) === articleRoot; }
+      catch { return false; }
+    });
+    if (rssHost) return rssHost;
+
+    const articleCompact = compactName(articleRoot);
+    const nameMatch = sources.find(s => {
+      const sourceCompact = compactName(s.name);
+      return sourceCompact && (articleCompact.includes(sourceCompact) || sourceCompact.includes(articleCompact));
+    });
+    return nameMatch || null;
   }
 
   // ── Look up parsed RSS data for a given article URL (best-effort) ─────
@@ -555,24 +579,6 @@
         color: var(--ink-muted);
         pointer-events: none;
       }
-      .clp-stats {
-        padding: 14px 28px;
-        border-bottom: 1px solid var(--rule);
-        font-size: 0.72rem;
-        color: var(--ink-muted);
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        display: flex;
-        gap: 20px;
-      }
-      .clp-stats strong {
-        color: var(--ink);
-        font-family: var(--display);
-        font-weight: 700;
-        font-size: 0.95rem;
-        letter-spacing: 0;
-        text-transform: none;
-      }
       .clp-content { padding: 18px 28px 28px; }
 
       .clp-empty {
@@ -829,7 +835,6 @@
 
       @media (max-width: 699px) {
         .clp-search-bar { padding: 10px 16px; }
-        .clp-stats { padding: 12px 16px; gap: 14px; }
         .clp-content { padding: 14px 16px 24px; }
         .clp-save-overlay { align-items: flex-end; padding: 0; }
         .clp-save-box {
@@ -881,10 +886,6 @@
                  placeholder="Search clippings…" autocomplete="off" spellcheck="false">
         </div>
       </div>
-      <div class="clp-stats">
-        <span>Clippings <strong id="clp-stat-total">0</strong></span>
-        <span>Filtered <strong id="clp-stat-shown">0</strong></span>
-      </div>
       <div class="clp-content" id="clp-content"></div>
     `;
     const input = document.getElementById('clp-search');
@@ -929,14 +930,9 @@
 
   function renderList() {
     const content = document.getElementById('clp-content');
-    const statTotal = document.getElementById('clp-stat-total');
-    const statShown = document.getElementById('clp-stat-shown');
     if (!content) return;
 
-    if (statTotal) statTotal.textContent = String(clippings.length);
-
     const shown = filteredClippings();
-    if (statShown) statShown.textContent = String(shown.length);
 
     if (!clippings.length) {
       content.innerHTML = renderEmpty();
@@ -1093,13 +1089,14 @@
       ok.disabled = true;
       ok.textContent = 'Saving…';
       try {
-        await saveClipping({
+        const saved = await saveClipping({
           text: trimmed,
           note: note.value,
           articleUrl: url || '',
           articleTitle,
           source: matched || null
         });
+        if (!saved) return;
         cleanup();
         toast('Clipping saved.', { duration: 2000 });
       } finally {

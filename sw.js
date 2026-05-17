@@ -1,6 +1,6 @@
 // Morning Brief — Service Worker
 // Cache version bumped on every release. External APIs are never cached.
-const CACHE = 'morning-brief-v17';
+const CACHE = 'morning-brief-v21';
 
 const ASSETS = [
   './morning-brief.html',
