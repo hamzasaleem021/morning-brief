@@ -1,6 +1,6 @@
 // Morning Brief — Service Worker
 // Cache version bumped on every release. External APIs are never cached.
-const CACHE = 'morning-brief-v15';
+const CACHE = 'morning-brief-v17';
 
 const ASSETS = [
   './morning-brief.html',
@@ -105,6 +105,21 @@ self.addEventListener('fetch', e => {
   if (EXTERNAL_HOSTS.some(h => url.href.includes(h))) {
     e.respondWith(
       fetch(e.request).catch(() => new Response('Offline', { status: 503 }))
+    );
+    return;
+  }
+
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request, { cache: 'reload' }).then(res => {
+        if (res && res.ok && res.type === 'basic') {
+          const clone = res.clone();
+          caches.open(CACHE)
+            .then(c => c.put('./morning-brief.html', clone))
+            .catch(err => console.warn('SW navigation cache put failed:', err));
+        }
+        return res;
+      }).catch(() => caches.match('./morning-brief.html'))
     );
     return;
   }

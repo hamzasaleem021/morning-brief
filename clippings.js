@@ -233,6 +233,22 @@
     }
   }
 
+  async function pushMissingLocal() {
+    if (!db() || !isLoggedIn() || !clippings.length) return;
+    try {
+      const { data, error } = await db().from(TABLE).select('id');
+      if (error) throw error;
+      const remoteIds = new Set((Array.isArray(data) ? data : []).map(r => r.id));
+      for (const clip of clippings) {
+        if (clip && clip.id && !remoteIds.has(clip.id)) {
+          await pushInsert(clip);
+        }
+      }
+    } catch (e) {
+      console.warn('[Clippings] local sync retry failed:', e);
+    }
+  }
+
   async function pushDelete(id) {
     if (!db() || !isLoggedIn()) return { ok: false, pending: true };
     try {
@@ -332,7 +348,7 @@
       const { data } = db().auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
           teardownRealtime();
-          setTimeout(() => pullAll().then(setupRealtime), 500);
+          setTimeout(() => pullAll().then(pushMissingLocal).then(setupRealtime), 500);
         } else if (event === 'SIGNED_OUT') {
           teardownRealtime();
         }
@@ -377,6 +393,7 @@
     if (!res.ok && !res.pending) {
       toast("Saved locally — couldn't reach the cloud, will retry.");
     }
+    setTimeout(pushMissingLocal, 1000);
     return clip;
   }
 
@@ -1122,7 +1139,7 @@
 
     // Pull from cloud if already signed in. If not, the next sign-in will pull.
     if (isLoggedIn()) {
-      pullAll().then(setupRealtime);
+      pullAll().then(pushMissingLocal).then(setupRealtime);
     } else {
       // Best effort: poll briefly for login (Sync.init is async on cold start)
       let tries = 0;
@@ -1130,7 +1147,7 @@
         tries++;
         if (isLoggedIn()) {
           clearInterval(poll);
-          pullAll().then(setupRealtime);
+          pullAll().then(pushMissingLocal).then(setupRealtime);
         } else if (tries > 20) {
           clearInterval(poll);
         }
@@ -1141,6 +1158,8 @@
     handleSharedPayloadIfAny();
     // …and on subsequent hashchanges, in case the user re-shares
     window.addEventListener('hashchange', handleSharedPayloadIfAny);
+    window.addEventListener('online', pushMissingLocal);
+    window.addEventListener('focus', pushMissingLocal);
   }
 
   if (document.readyState === 'loading') {
