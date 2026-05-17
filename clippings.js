@@ -28,6 +28,8 @@
   const TABLE       = 'user_clippings';
   const INBOX_CACHE = 'clippings-inbox';
   const INBOX_KEY   = '/clippings-pending';
+  const LAST_ARTICLE_KEY = 'morning_brief_last_article_context';
+  const LAST_ARTICLE_TTL_MS = 6 * 60 * 60 * 1000;
   const MAX_TEXT    = 2000;   // hard cap on saved passage length
   const SEARCH_DEBOUNCE_MS = 150;
 
@@ -66,6 +68,44 @@
   }
 
   function stripWWW(host) { return String(host || '').replace(/^www\./i, '').toLowerCase(); }
+
+  function comparableUrl(url) {
+    try {
+      const u = new URL(url, location.href);
+      u.hash = '';
+      return u.href;
+    } catch {
+      return String(url || '').split('#')[0];
+    }
+  }
+
+  function sameArticleUrl(a, b) {
+    return comparableUrl(a) === comparableUrl(b);
+  }
+
+  function cleanSharedUrl(url) {
+    return String(url || '').trim().replace(/[)\].,;!?]+$/g, '');
+  }
+
+  function extractSharedUrl(text) {
+    let nextText = String(text || '').trim();
+    let url = '';
+
+    const trailing = nextText.match(/(?:^|\s)(https?:\/\/\S+)\s*$/i);
+    if (trailing) {
+      url = cleanSharedUrl(trailing[1]);
+      nextText = nextText.slice(0, trailing.index).trim();
+      return { text: nextText, url };
+    }
+
+    const leading = nextText.match(/^\s*(https?:\/\/\S+)(?:\s+|$)/i);
+    if (leading) {
+      url = cleanSharedUrl(leading[1]);
+      nextText = nextText.slice(leading[0].length).trim();
+    }
+
+    return { text: nextText, url };
+  }
 
   function rootDomain(host) {
     // Last two segments. Good enough for English-language news sites.
@@ -169,9 +209,51 @@
   // ── Look up parsed RSS data for a given article URL (best-effort) ─────
   function lookupArticleMeta(articleUrl) {
     if (window.MB && typeof window.MB.lookupArticle === 'function') {
-      return window.MB.lookupArticle(articleUrl) || null;
+      const live = window.MB.lookupArticle(articleUrl);
+      if (live) return live;
     }
-    return null;
+    return readRecentArticleContext(articleUrl);
+  }
+
+  function readRecentArticleContext(articleUrl) {
+    try {
+      const raw = localStorage.getItem(LAST_ARTICLE_KEY);
+      if (!raw) return null;
+      const ctx = JSON.parse(raw);
+      if (!ctx || !ctx.url || !ctx.at) return null;
+      if (Date.now() - ctx.at > LAST_ARTICLE_TTL_MS) return null;
+      if (articleUrl && !sameArticleUrl(ctx.url, articleUrl)) return null;
+      return ctx;
+    } catch {
+      return null;
+    }
+  }
+
+  function rememberArticleContext(url, fallbackTitle) {
+    if (!url) return;
+    const meta = lookupArticleMeta(url) || {};
+    const matched = matchSource(url);
+    const ctx = {
+      url: comparableUrl(url),
+      title: (meta.title || fallbackTitle || '').trim(),
+      dateISO: meta.dateISO || '',
+      sourceId: (matched && matched.id) || meta.sourceId || null,
+      sourceName: (matched && matched.name) || meta.sourceName || '',
+      sourceDomain: (matched && matched.domain) || meta.sourceDomain || '',
+      at: Date.now()
+    };
+    try { localStorage.setItem(LAST_ARTICLE_KEY, JSON.stringify(ctx)); } catch {}
+  }
+
+  function rememberOutboundArticleClick(e) {
+    const link = e.target && e.target.closest
+      ? e.target.closest('a.article-featured, a.article-item')
+      : null;
+    if (!link) return;
+    const url = link.href || link.getAttribute('href') || '';
+    const titleEl = link.querySelector('.featured-title, .item-title');
+    const title = titleEl ? titleEl.textContent : link.textContent;
+    rememberArticleContext(url, title);
   }
 
   // ═════════════════════════════════════════════════════════════════════
@@ -481,9 +563,9 @@
       articleUrl: articleUrl || '',
       articleTitle: (articleTitle || (meta && meta.title) || '').trim(),
       articlePubDate: (meta && meta.dateISO) || '',
-      sourceId: matched ? matched.id : null,
-      sourceName: matched ? matched.name : (host ? stripWWW(host) : ''),
-      sourceDomain: matched ? matched.domain : (host ? stripWWW(host) : ''),
+      sourceId: matched ? matched.id : ((meta && meta.sourceId) || null),
+      sourceName: matched ? matched.name : ((meta && meta.sourceName) || (host ? stripWWW(host) : '')),
+      sourceDomain: matched ? matched.domain : ((meta && meta.sourceDomain) || (host ? stripWWW(host) : '')),
       savedAt: new Date().toISOString()
     };
 
@@ -606,13 +688,15 @@
     let url  = (payload.url  || '').trim();
     let title = (payload.title || '').trim();
 
-    if (!url && /^https?:\/\//i.test(text)) {
-      // Some share sources put only the URL in `text`.
-      const urlMatch = text.match(/https?:\/\/\S+/);
-      if (urlMatch) { url = urlMatch[0]; text = text.replace(urlMatch[0], '').trim(); }
+    const fromText = extractSharedUrl(text);
+    if (!url && fromText.url) {
+      url = fromText.url;
+      text = fromText.text;
     }
-    // Strip a trailing URL that some apps append to selection text.
-    text = text.replace(/\s*https?:\/\/\S+\s*$/, '').trim();
+
+    const recent = readRecentArticleContext(url || '');
+    if (!url && recent) url = recent.url;
+    if (!title && recent && (!url || sameArticleUrl(recent.url, url))) title = recent.title || '';
 
     if (!text && !url) return;
     openSaveSheet({ text, url, title });
@@ -1231,6 +1315,7 @@
     loadFromCache();
     updateBadge();
     setupAuthListener();
+    document.addEventListener('click', rememberOutboundArticleClick, true);
 
     // Pull from cloud if already signed in. The Supabase session is the source
     // of truth here; Sync.isLoggedIn() can lag during a cold PWA share launch.
