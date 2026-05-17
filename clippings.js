@@ -224,7 +224,8 @@
   async function pushInsert(clip) {
     if (!db() || !isLoggedIn()) return { ok: false, pending: true };
     try {
-      const { error } = await db().from(TABLE).insert(clipToRow(clip));
+      const user = await currentUser();
+      const { error } = await db().from(TABLE).insert(clipToRow(clip, user && user.id));
       if (error) throw error;
       return { ok: true };
     } catch (e) {
@@ -276,8 +277,8 @@
     }
   }
 
-  function clipToRow(c) {
-    return {
+  function clipToRow(c, userId) {
+    const row = {
       id: c.id,
       text: c.text,
       note: c.note || null,
@@ -289,6 +290,8 @@
       source_domain: c.sourceDomain || null,
       saved_at: c.savedAt
     };
+    if (userId) row.user_id = userId;
+    return row;
   }
 
   function rowToClip(r) {
@@ -386,14 +389,22 @@
       savedAt: new Date().toISOString()
     };
 
-    addLocal(clip);
-    renderList();
+    if (!db() || !isLoggedIn()) {
+      toast('Sign in to save clippings across devices.');
+      return null;
+    }
 
     const res = await pushInsert(clip);
-    if (!res.ok && !res.pending) {
-      toast("Saved locally — couldn't reach the cloud, will retry.");
+    if (!res.ok && res.pending) {
+      toast('Sign in to save clippings across devices.');
+      return null;
     }
-    setTimeout(pushMissingLocal, 1000);
+    if (!res.ok && !res.pending) {
+      toast("Couldn't save clipping to the cloud. Check your sign-in and Supabase setup.");
+      return null;
+    }
+    addLocal(clip);
+    renderList();
     return clip;
   }
 
