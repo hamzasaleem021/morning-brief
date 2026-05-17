@@ -2090,6 +2090,12 @@
     </svg>
     Manage Sources
   </button>
+  <button class="manage-sources-btn" type="button" id="clippings-btn" style="margin-left:8px;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+    </svg>
+    Clippings <span id="clippings-count-badge" style="margin-left:4px;opacity:0.7;font-variant-numeric:tabular-nums;"></span>
+  </button>
 </div>
 
 <!-- Pull-to-refresh indicator -->
@@ -2239,6 +2245,22 @@
       <div class="loading-state">
         <div class="loading-spinner"></div>
         <p class="loading-text">Loading catalog...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Clippings modal — populated by clippings.js -->
+<div class="modal-overlay" id="clippings-overlay" role="dialog" aria-modal="true" aria-labelledby="clippings-title">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2 id="clippings-title">Clippings</h2>
+      <button class="modal-close" type="button" id="clippings-close-btn" aria-label="Close">✕</button>
+    </div>
+    <div id="clippings-body">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading clippings…</p>
       </div>
     </div>
   </div>
@@ -2801,6 +2823,34 @@ const UI = (() => {
   const failedSources = new Set();
   let scrollSpyObserver = null;
 
+  // ── Article cache (for Clippings to look up pubDate at save time) ───
+  // Keyed by article URL. Bounded to keep memory tidy across long sessions.
+  const articleCache = new Map();
+  const ARTICLE_CACHE_MAX = 200;
+  function cacheArticles(articles, source) {
+    if (!Array.isArray(articles)) return;
+    articles.forEach(a => {
+      if (!a || !a.url) return;
+      articleCache.set(a.url, {
+        title: a.title || '',
+        dateISO: a.dateISO || '',
+        date: a.date || '',
+        sourceId: source.id,
+        sourceName: source.name,
+        sourceDomain: source.domain
+      });
+    });
+    // Bound the cache — drop oldest entries when over the cap
+    if (articleCache.size > ARTICLE_CACHE_MAX) {
+      const excess = articleCache.size - ARTICLE_CACHE_MAX;
+      const keys = Array.from(articleCache.keys()).slice(0, excess);
+      keys.forEach(k => articleCache.delete(k));
+    }
+  }
+  // Expose lookup for external modules (Clippings)
+  window.MB = window.MB || {};
+  window.MB.lookupArticle = (url) => articleCache.get(url) || null;
+
   // ── Toast (unified — Tier 2.4) ──────────────────────────────────────
   let toastTimer = null;
   function showToast(msg, opts = {}) {
@@ -2952,6 +3002,7 @@ const UI = (() => {
       if (!items.length) return { status: 'empty', articles: [] };
 
       const articles = items.slice(0, CFG.ARTICLES_PER_SOURCE).map(item => parseItem(item, isAtom, source));
+      cacheArticles(articles, source);
       return { status: 'ok', articles };
     } catch(e) {
       clearTimeout(timer);
@@ -2984,10 +3035,12 @@ const UI = (() => {
          || item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0]?.textContent
          || '');
     let date = '';
+    let dateISO = '';
     if (dateStr) {
       const d = new Date(dateStr);
       if (!isNaN(d.getTime())) {
         date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        dateISO = d.toISOString();
       }
     }
 
@@ -2999,7 +3052,7 @@ const UI = (() => {
     const rawBody = contentEncoded || description || summary || contentAtom || '';
     const excerpt = makeExcerpt(rawBody);
 
-    return { title, url: link.trim(), date, excerpt };
+    return { title, url: link.trim(), date, dateISO, excerpt };
   }
 
   // Word-boundary truncation, only append ellipsis if truncated (Tier 1.4)
@@ -3895,6 +3948,24 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches
   || window.navigator.standalone === true;
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 
+// Detect "installed but viewed in a regular Chrome tab" (Android Chrome supports this).
+// Falls back to the standalone check when getInstalledRelatedApps is unavailable.
+async function isInstalled() {
+  if (isStandalone) return true;
+  if (navigator.getInstalledRelatedApps) {
+    try {
+      const apps = await navigator.getInstalledRelatedApps();
+      return apps.length > 0;
+    } catch (e) {}
+  }
+  return false;
+}
+
+function wasDismissed() {
+  try { return localStorage.getItem(CFG.INSTALL_DISMISSED_KEY) === 'true'; }
+  catch (e) { return false; }
+}
+
 function trackSession() {
   try {
     const now = Date.now();
@@ -3909,25 +3980,10 @@ function trackSession() {
   } catch(e) { return 1; }
 }
 
-function shouldOfferInstall() {
-  if (isStandalone) return false;
-  try {
-    if (localStorage.getItem(CFG.INSTALL_DISMISSED_KEY) === 'true') return false;
-  } catch(e) {}
-  const sessions = parseInt(localStorage.getItem(CFG.SESSION_COUNT_KEY) || '0', 10);
-  const sources = State.getCount();
-  return sessions >= CFG.INSTALL_MIN_SESSIONS && sources >= CFG.INSTALL_MIN_SOURCES;
-}
-
 function showInstallPrompt() {
   const card = document.getElementById('install-card');
   if (!card) return;
-  // Don't show if already visible or if on iOS (use iOS hint instead)
   if (card.classList.contains('visible')) return;
-  if (isIOS) {
-    document.getElementById('ios-hint')?.classList.add('visible');
-    return;
-  }
   if (!deferredInstall) return;
   card.classList.add('visible');
 }
@@ -3940,27 +3996,27 @@ function dismissInstallPrompt(permanent = false) {
 }
 
 function triggerInstall() {
-  if (!deferredInstall) {
-    if (isIOS) document.getElementById('ios-hint')?.classList.add('visible');
+  if (deferredInstall) {
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(() => {
+      dismissInstallPrompt(false);
+      deferredInstall = null;
+    });
     return;
   }
-  deferredInstall.prompt();
-  deferredInstall.userChoice.then(choice => {
-    dismissInstallPrompt(false);
-    deferredInstall = null;
-  });
+  // Chrome hasn't fired beforeinstallprompt yet — give the user the manual path.
+  if (window.UI && typeof UI.toast === 'function') {
+    UI.toast("Chrome hasn't enabled install yet. Tap the ⋮ menu → 'Install app'.", { duration: 6000 });
+  }
 }
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstall = e;
-  // Always show the persistent install option in Manage Sources
-  const installRow = document.getElementById('install-app-row');
-  if (installRow) installRow.style.display = '';
-  // Check eligibility, but delay briefly so page renders first
-  setTimeout(() => {
-    if (shouldOfferInstall()) showInstallPrompt();
-  }, 1500);
+  document.getElementById('install-app-row')?.style.removeProperty('display');
+  isInstalled().then(installed => {
+    if (!installed && !wasDismissed()) showInstallPrompt();
+  });
 });
 
 window.addEventListener('appinstalled', () => {
@@ -3996,6 +4052,7 @@ function setupEventDelegation() {
 
     // Chrome buttons
     if (t.closest('#manage-sources-btn')) { openManageModal(State.getCount() === 0); return; }
+    if (t.closest('#clippings-btn')) { window.Clippings?.open(); return; }
     if (t.closest('#theme-toggle') || t.closest('#theme-toggle-mobile')) { toggleTheme(); return; }
 
     if (t.closest('#sync-indicator') || t.closest('#sync-indicator-mobile')) {
@@ -4051,12 +4108,19 @@ function setupEventDelegation() {
       return;
     }
 
+    // Clippings modal
+    if (t.closest('#clippings-close-btn')) {
+      window.Clippings?.close();
+      return;
+    }
+
     // Click outside modal to close
     if (t.id === 'modal-overlay') { closeManageModal(); return; }
     if (t.id === 'discover-overlay') {
       document.getElementById('discover-overlay').classList.remove('open');
       return;
     }
+    if (t.id === 'clippings-overlay') { window.Clippings?.close(); return; }
 
     // Nav pills — scroll-smooth behavior comes from the anchor; we just update active
     const pill = t.closest('.source-pill');
@@ -4238,6 +4302,15 @@ function promptUpdate(worker) {
   // Load cached sources synchronously
   State.loadFromCache();
 
+  // Reveal the persistent "Install" entry in Manage Sources for non-installed Chrome.
+  // The click handler (triggerInstall) branches between deferredInstall.prompt() and a
+  // manual-instructions toast — so the entry is useful even before beforeinstallprompt fires.
+  isInstalled().then(installed => {
+    if (!installed) {
+      document.getElementById('install-app-row')?.style.removeProperty('display');
+    }
+  });
+
   // Wire up event delegation
   setupEventDelegation();
 
@@ -4271,16 +4344,15 @@ function promptUpdate(worker) {
     UI.refetchAll();
   }, 15 * 60 * 1000);
 
-  // If the install criteria are already met on load, show it after a moment
+  // If the install criteria are already met on load, show it after a moment.
+  // The beforeinstallprompt handler now shows the card immediately when fired —
+  // this block stays as a guard for the case where the event fired before our
+  // listener attached (rare, but it can happen on slow devices).
   setTimeout(() => {
-    if (shouldOfferInstall() && deferredInstall) {
-      showInstallPrompt();
-    } else if (isIOS && !isStandalone && State.getCount() >= CFG.INSTALL_MIN_SOURCES) {
-      try {
-        if (localStorage.getItem(CFG.INSTALL_DISMISSED_KEY) !== 'true') {
-          document.getElementById('ios-hint')?.classList.add('visible');
-        }
-      } catch(e) {}
+    if (deferredInstall) {
+      isInstalled().then(installed => {
+        if (!installed && !wasDismissed()) showInstallPrompt();
+      });
     }
   }, 3000);
 })();
@@ -4319,6 +4391,9 @@ async function rlsSelfCheck() {
 
 <!-- Discover module — loaded after main app so window.State, window.UI etc. exist -->
 <script src="./discovery.js" defer></script>
+
+<!-- Clippings module — same loading pattern as discovery.js -->
+<script src="./clippings.js" defer></script>
 
 </body>
 </html>
