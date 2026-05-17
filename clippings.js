@@ -82,6 +82,42 @@
     if (window.UI && typeof UI.toast === 'function') UI.toast(msg, opts || {});
   }
 
+  function describeDbError(e) {
+    if (!e) return '';
+    const parts = [e.code, e.message || e.details || e.hint].filter(Boolean);
+    return parts.join(': ').slice(0, 220);
+  }
+
+  function toastCloudError(e) {
+    const detail = describeDbError(e);
+    toast(detail
+      ? `Couldn't save clipping: ${detail}`
+      : "Couldn't save clipping to the cloud. Check your sign-in and Supabase setup.");
+  }
+
+  function looksLikeUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      .test(String(value || ''));
+  }
+
+  function sourceIdAsUuid(sourceId) {
+    const raw = String(sourceId || '');
+    const stripped = raw.startsWith('src_') ? raw.slice(4) : raw;
+    return looksLikeUuid(stripped) ? stripped : raw;
+  }
+
+  function shouldRetrySourceId(error) {
+    const msg = [
+      error && error.code,
+      error && error.message,
+      error && error.details,
+      error && error.hint
+    ].filter(Boolean).join(' ').toLowerCase();
+    return msg.includes('source_id')
+      || msg.includes('invalid input syntax for type uuid')
+      || (msg.includes('schema cache') && msg.includes('column'));
+  }
+
   function confirmDialog(message, opts) {
     if (window.UI && typeof UI.confirm === 'function') return UI.confirm(message, opts || {});
     return Promise.resolve(window.confirm(message));
@@ -230,10 +266,12 @@
   }
 
   async function pullAll() {
-    if (!db() || !isLoggedIn()) return;
+    if (!db()) return;
     if (isPulling) return;
     isPulling = true;
     try {
+      const user = await currentUser();
+      if (!user) return;
       const { data, error } = await db().from(TABLE).select('*').order('saved_at', { ascending: false });
       if (error) { console.warn('[Clippings] pull failed:', error); return; }
       if (!Array.isArray(data)) return;
@@ -258,11 +296,28 @@
     }
   }
 
-  async function pushInsert(clip) {
-    if (!db() || !isLoggedIn()) return { ok: false, pending: true };
+  async function pushInsert(clip, user) {
+    if (!db()) return { ok: false, pending: true };
     try {
-      const user = await currentUser();
-      const { error } = await db().from(TABLE).insert(clipToRow(clip, user && user.id));
+      const authUser = user || await currentUser();
+      if (!authUser) return { ok: false, pending: true };
+      const row = clipToRow(clip, authUser.id);
+      let { error } = await db().from(TABLE).insert(row);
+      if (error && row.source_id && shouldRetrySourceId(error)) {
+        const retryRow = { ...row, source_id: sourceIdAsUuid(row.source_id) };
+        if (retryRow.source_id !== row.source_id) {
+          const retry = await db().from(TABLE).insert(retryRow);
+          if (!retry.error) return { ok: true };
+          error = retry.error;
+        }
+      }
+      if (error && row.source_id && shouldRetrySourceId(error)) {
+        const fallbackRow = { ...row };
+        delete fallbackRow.source_id;
+        const fallback = await db().from(TABLE).insert(fallbackRow);
+        if (!fallback.error) return { ok: true };
+        error = fallback.error;
+      }
       if (error) throw error;
       return { ok: true };
     } catch (e) {
@@ -272,8 +327,10 @@
   }
 
   async function pushMissingLocal() {
-    if (!db() || !isLoggedIn() || !clippings.length) return;
+    if (!db() || !clippings.length) return;
     try {
+      const user = await currentUser();
+      if (!user) return;
       const { data, error } = await db().from(TABLE).select('id');
       if (error) throw error;
       const remoteIds = new Set((Array.isArray(data) ? data : []).map(r => r.id));
@@ -288,8 +345,10 @@
   }
 
   async function pushDelete(id) {
-    if (!db() || !isLoggedIn()) return { ok: false, pending: true };
+    if (!db()) return { ok: false, pending: true };
     try {
+      const user = await currentUser();
+      if (!user) return { ok: false, pending: true };
       const { error } = await db().from(TABLE).delete().eq('id', id);
       if (error) throw error;
       return { ok: true };
@@ -300,8 +359,10 @@
   }
 
   async function pushUpdate(clip) {
-    if (!db() || !isLoggedIn()) return { ok: false, pending: true };
+    if (!db()) return { ok: false, pending: true };
     try {
+      const user = await currentUser();
+      if (!user) return { ok: false, pending: true };
       const { error } = await db().from(TABLE).update({
         text: clip.text,
         note: clip.note || null
@@ -347,7 +408,7 @@
   }
 
   async function setupRealtime() {
-    if (!db() || !isLoggedIn() || realtimeChannel) return;
+    if (!db() || realtimeChannel) return;
     try {
       const user = await currentUser();
       if (!user) return;
@@ -426,18 +487,24 @@
       savedAt: new Date().toISOString()
     };
 
-    if (!db() || !isLoggedIn()) {
+    if (!db()) {
       toast('Sign in to save clippings across devices.');
       return null;
     }
 
-    const res = await pushInsert(clip);
+    const user = await currentUser();
+    if (!user) {
+      toast('Sign in to save clippings across devices.');
+      return null;
+    }
+
+    const res = await pushInsert(clip, user);
     if (!res.ok && res.pending) {
       toast('Sign in to save clippings across devices.');
       return null;
     }
     if (!res.ok && !res.pending) {
-      toast("Couldn't save clipping to the cloud. Check your sign-in and Supabase setup.");
+      toastCloudError(res.error);
       return null;
     }
     addLocal(clip);
@@ -1165,22 +1232,27 @@
     updateBadge();
     setupAuthListener();
 
-    // Pull from cloud if already signed in. If not, the next sign-in will pull.
-    if (isLoggedIn()) {
-      pullAll().then(pushMissingLocal).then(setupRealtime);
-    } else {
+    // Pull from cloud if already signed in. The Supabase session is the source
+    // of truth here; Sync.isLoggedIn() can lag during a cold PWA share launch.
+    currentUser().then(user => {
+      if (user || isLoggedIn()) {
+        pullAll().then(pushMissingLocal).then(setupRealtime);
+        return;
+      }
+
       // Best effort: poll briefly for login (Sync.init is async on cold start)
       let tries = 0;
-      const poll = setInterval(() => {
+      const poll = setInterval(async () => {
         tries++;
-        if (isLoggedIn()) {
+        const polledUser = await currentUser();
+        if (polledUser || isLoggedIn()) {
           clearInterval(poll);
           pullAll().then(pushMissingLocal).then(setupRealtime);
         } else if (tries > 20) {
           clearInterval(poll);
         }
       }, 500);
-    }
+    });
 
     // Handle a share-target redirect on initial load
     handleSharedPayloadIfAny();
