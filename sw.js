@@ -84,11 +84,13 @@ self.addEventListener('fetch', e => {
             headers: { 'Content-Type': 'application/json' }
           })
         );
-        return Response.redirect('./morning-brief.html#clippings/share', 303);
+        const target = new URL('./morning-brief.html#clippings/share', self.registration.scope).href;
+        return Response.redirect(target, 303);
       } catch (err) {
         // If anything blows up, fall back to opening the app normally —
         // worst case the user loses the selection, never gets a stuck state.
-        return Response.redirect('./morning-brief.html', 303);
+        const fallback = new URL('./morning-brief.html', self.registration.scope).href;
+        return Response.redirect(fallback, 303);
       }
     })());
     return;

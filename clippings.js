@@ -35,6 +35,8 @@
   let clippings = [];          // array, newest first
   let searchQuery = '';
   let realtimeChannel = null;
+  let authSubscription = null;
+  let isPulling = false;
   let realtimeNonce = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
     : String(Date.now()) + Math.random();
@@ -180,19 +182,42 @@
     return !!(window.Sync && typeof Sync.isLoggedIn === 'function' && Sync.isLoggedIn());
   }
 
+  async function currentUser() {
+    if (!db() || !db().auth || typeof db().auth.getSession !== 'function') return null;
+    try {
+      const { data } = await db().auth.getSession();
+      return data && data.session ? data.session.user : null;
+    } catch {
+      return null;
+    }
+  }
+
   async function pullAll() {
     if (!db() || !isLoggedIn()) return;
+    if (isPulling) return;
+    isPulling = true;
     try {
       const { data, error } = await db().from(TABLE).select('*').order('saved_at', { ascending: false });
       if (error) { console.warn('[Clippings] pull failed:', error); return; }
       if (!Array.isArray(data)) return;
-      clippings = data.map(rowToClip);
+      const localBeforePull = clippings.slice();
+      const remote = data.map(rowToClip);
+      const remoteIds = new Set(remote.map(c => c.id));
+      const localOnly = localBeforePull.filter(c => c && c.id && !remoteIds.has(c.id));
+
+      clippings = remote.concat(localOnly);
       sortNewestFirst();
       persist();
       updateBadge();
       renderList();
+
+      for (const clip of localOnly) {
+        await pushInsert(clip);
+      }
     } catch (e) {
       console.warn('[Clippings] pull exception:', e);
+    } finally {
+      isPulling = false;
     }
   }
 
@@ -265,13 +290,15 @@
     };
   }
 
-  function setupRealtime() {
+  async function setupRealtime() {
     if (!db() || !isLoggedIn() || realtimeChannel) return;
     try {
+      const user = await currentUser();
+      if (!user) return;
       realtimeChannel = db()
-        .channel('clippings-changes')
+        .channel('clippings-changes-' + user.id)
         .on('postgres_changes',
-          { event: '*', schema: 'public', table: TABLE },
+          { event: '*', schema: 'public', table: TABLE, filter: `user_id=eq.${user.id}` },
           (payload) => {
             if (payload.eventType === 'INSERT' && payload.new) {
               // Skip our own echoes by id presence
@@ -287,6 +314,32 @@
         .subscribe();
     } catch (e) {
       console.warn('[Clippings] realtime setup failed:', e);
+    }
+  }
+
+  function teardownRealtime() {
+    if (!realtimeChannel || !db() || typeof db().removeChannel !== 'function') {
+      realtimeChannel = null;
+      return;
+    }
+    db().removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+
+  function setupAuthListener() {
+    if (authSubscription || !db() || !db().auth || typeof db().auth.onAuthStateChange !== 'function') return;
+    try {
+      const { data } = db().auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          teardownRealtime();
+          setTimeout(() => pullAll().then(setupRealtime), 500);
+        } else if (event === 'SIGNED_OUT') {
+          teardownRealtime();
+        }
+      });
+      authSubscription = data && data.subscription ? data.subscription : true;
+    } catch (e) {
+      console.warn('[Clippings] auth listener setup failed:', e);
     }
   }
 
@@ -1065,6 +1118,7 @@
   function init() {
     loadFromCache();
     updateBadge();
+    setupAuthListener();
 
     // Pull from cloud if already signed in. If not, the next sign-in will pull.
     if (isLoggedIn()) {

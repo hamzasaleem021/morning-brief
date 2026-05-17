@@ -30,7 +30,7 @@
   "related_applications": [
     {
       "platform": "webapp",
-      "url": "REPLACE_WITH_YOUR_DEPLOYED_URL/manifest.json"
+      "url": "./manifest.json"
     }
   ]
 }
