@@ -54,6 +54,11 @@
     });
   }
 
+  function normalizeClipId(id) {
+    const s = String(id || '');
+    return s.startsWith('clp_') ? s.slice(4) : s;
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -143,8 +148,16 @@
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        clippings = parsed;
+        let changed = false;
+        clippings = parsed.map(c => {
+          if (c && typeof c.id === 'string' && c.id.startsWith('clp_')) {
+            changed = true;
+            return { ...c, id: normalizeClipId(c.id) };
+          }
+          return c;
+        });
         sortNewestFirst();
+        if (changed) persist();
       }
     } catch (e) {
       console.warn('[Clippings] cache parse failed, ignoring:', e);
@@ -303,7 +316,7 @@
 
   function clipToRow(c, userId) {
     const row = {
-      id: c.id,
+      id: normalizeClipId(c.id),
       text: c.text,
       note: c.note || null,
       article_url: c.articleUrl,
@@ -401,7 +414,7 @@
     const meta = lookupArticleMeta(articleUrl);
 
     const clip = {
-      id: 'clp_' + uuid(),
+      id: uuid(),
       text,
       note: (note || '').trim(),
       articleUrl: articleUrl || '',
@@ -1053,6 +1066,7 @@
 
     ta.value = (text || '').slice(0, MAX_TEXT);
     note.value = '';
+    ok.textContent = url ? 'Save & Return' : 'Save';
     updateCounter();
 
     // Show matched source (or warn)
@@ -1097,11 +1111,17 @@
           source: matched || null
         });
         if (!saved) return;
+        const returnUrl = buildScrollUrl(saved);
         cleanup();
-        toast('Clipping saved.', { duration: 2000 });
+        if (returnUrl) {
+          toast('Saved to Clippings. Returning to article...', { duration: 1600 });
+          setTimeout(() => { window.location.href = returnUrl; }, 350);
+        } else {
+          toast('Clipping saved.', { duration: 2000 });
+        }
       } finally {
         ok.disabled = false;
-        ok.textContent = 'Save';
+        ok.textContent = url ? 'Save & Return' : 'Save';
       }
     }
 
