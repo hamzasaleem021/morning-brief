@@ -1,5 +1,70 @@
 # Changelog
 
+## v26 — OPML Import / Export
+
+Portability release. An anti-lock-in reader that locked your source list in
+was a contradiction; this closes it. Import your feeds from any reader
+(Feedly, Inoreader, NetNewsWire — anything that exports OPML), and take them
+back out any time.
+
+### Added
+- **OPML import** in Manage Sources. Pick a `.opml`/`.xml` file; the parser
+  handles real-world mess: folder/category outlines (skipped), mixed
+  attribute casing (`xmlUrl` / `xmlurl`), in-file duplicates, trailing-slash
+  URL variants, and malformed entries. Feeds you already follow are filtered
+  out before the confirm dialog, so the count it shows is honest.
+- **OPML export** — one tap downloads `morning-brief-sources-YYYY-MM-DD.opml`
+  (OPML 2.0, names + xmlUrl + htmlUrl). Works signed in or out.
+- **Limit-aware import.** If the file holds more feeds than your remaining
+  slots, the dialog says so, imports up to the limit, and the summary toast
+  carries a "Redeem a code" action — the voucher system finally has a path
+  leading to it.
+
+### Architecture
+- **New module `opml.js`** (~200 lines), same IIFE pattern as `discovery.js`
+  and `clippings.js`. It never touches State, Persist, or Supabase directly —
+  all access goes through a new `window.MB.sources` bridge, mirroring the
+  existing `window.MB.lookupArticle` pattern.
+- **New orchestrator `importSources()`** in the USER ACTIONS section. Batch
+  semantics: all State adds first, then ONE `Persist.save()` and ONE
+  `Sync.pushAfterChange()` for the whole import — a 30-feed file produces a
+  single Supabase write, not thirty.
+- **Zero new CSS.** The Import/Export row reuses `.voucher-entry` /
+  `.voucher-link`.
+
+### Files modified
+
+| File | Changes |
+|---|---|
+| `morning-brief.html` | Import/Export row in Manage Sources; `importSources()` orchestrator; `window.MB.sources` bridge; `opml.js` script tag |
+| `sw.js` | Cache bump v25 → v26; `opml.js` added to precache assets |
+| `opml.js` | New file |
+| `README.md` | Feature bullet + file listing |
+
+### Verification performed
+- Syntax checks pass on the patched inline app script, `sw.js`, and `opml.js`.
+- Parser exercised against Feedly-style nested OPML, lowercase attributes,
+  duplicates, bad URLs, garbage input, and feed-less files — all handled.
+- `importSources` integration-tested against mocked State/Persist/Sync:
+  a 6-feed import (1 duplicate, 1 over-limit) returned
+  `{added: 4, dupes: 1, limited: 1}` with exactly one persist and one push;
+  an all-duplicate import produced zero cloud writes.
+
+### What was NOT changed (intentionally)
+- No folder/category structure is preserved on import — Morning Brief has no
+  folders, and inventing them for this feature would be scope creep.
+- Imported feeds are not validated against the proxy at import time; they
+  mount and fetch like any manually added source, and failures surface
+  through the existing per-source Retry path.
+
+### Caveats (be honest)
+- Live UI was not click-tested before release. Three checks to run on the
+  deployed site: the Import/Export row renders under the install row;
+  export-then-reimport reports "already in your brief" with nothing added;
+  installed PWAs show the update toast from the v26 cache bump.
+
+---
+
 ## v10 — The Coherence Release
 
 Major refactor focused on data integrity, design coherence, and onboarding.

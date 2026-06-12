@@ -11,6 +11,7 @@ A focused RSS reader that holds up to 20 feeds and presents them as a daily pers
 - Up to 20 RSS sources; each gets its own section with the 5 latest posts
 - Dark mode, drag-reorder, scroll-spy nav, pull-to-refresh
 - Optional magic-link sync across devices via Supabase
+- OPML import/export — bring your feeds from any reader, take them with you any time
 - No tracking, no analytics, no ads (see `privacy.html`)
 
 ## Files
@@ -21,6 +22,7 @@ config.js                — All tunable constants; fork-friendly
 sw.js                    — Service worker (offline + update prompt)
 discovery.js             — Source catalog browser ("Discover")
 discovery-sources.json   — 1,250 curated RSS feeds across 67 categories
+opml.js                  — OPML import/export (Manage Sources modal)
 privacy.html             — Privacy policy (shares the app's stylesheet)
 manifest.json            — PWA manifest
 icon-192.png, icon-512.png — App icons

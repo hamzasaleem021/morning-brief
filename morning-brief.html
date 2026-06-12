@@ -2212,6 +2212,14 @@
         <span class="install-app-text">Use as a standalone app</span>
         <button type="button" class="voucher-link" id="install-app-btn">Install</button>
       </div>
+      <div class="voucher-entry" id="opml-row">
+        <span class="voucher-entry-text">Moving from another reader?</span>
+        <span>
+          <button type="button" class="voucher-link" id="opml-import-btn">Import OPML</button>
+          <span class="voucher-entry-text" aria-hidden="true"> · </span>
+          <button type="button" class="voucher-link" id="opml-export-btn">Export</button>
+        </span>
+      </div>
       <div class="voucher-entry">
         <span class="voucher-entry-text" id="voucher-entry-text">Need more than 20 sources?</span>
         <button type="button" class="voucher-link" id="voucher-redeem-link">Redeem a code</button>
@@ -3775,6 +3783,55 @@ async function removeSource(id) {
   UI.renderModal();
 }
 
+// Batch add for OPML import (opml.js). One Persist + one Sync push for the
+// whole batch — NOT one per feed — so a 30-feed import doesn't hammer
+// Supabase with 30 writes.
+async function importSources(items) {
+  let added = 0, dupes = 0, limited = 0;
+  const addedSources = [];
+
+  for (const item of items) {
+    if (State.getCount() >= State.getLimit()) {
+      limited = items.length - added - dupes;
+      break;
+    }
+    let domain;
+    try { domain = stripWWW(new URL(item.rss).hostname); } catch { dupes++; continue; }
+    const r = State.addSource({
+      id: 'src_' + uuid(),
+      name: item.name || domain,
+      domain,
+      rss: item.rss
+    });
+    if (r.ok) { added++; addedSources.push(r.source); }
+    else if (r.reason === 'limit') { limited++; }
+    else { dupes++; }
+  }
+
+  if (added > 0) {
+    Persist.save();
+    await Sync.pushAfterChange();
+    addedSources.forEach(s => UI.mountAndFetch(s));
+    UI.renderModal();
+  }
+
+  return { added, dupes, limited };
+}
+
+// Bridge for the OPML module — same pattern as window.MB.lookupArticle.
+// opml.js never touches State/Persist/Sync directly; everything goes
+// through these.
+window.MB = window.MB || {};
+window.MB.sources = {
+  list:  () => State.getSources().map(s => ({ name: s.name, rss: s.rss, domain: s.domain })),
+  count: () => State.getCount(),
+  limit: () => State.getLimit(),
+  importSources,
+  toast:   (msg, opts) => UI.toast(msg, opts),
+  confirm: (msg, opts) => UI.confirm(msg, opts),
+  promptVoucher: () => promptVoucher()
+};
+
 async function handleMagicLink() {
   const emailInput = document.getElementById('sync-email-input');
   const email = emailInput?.value.trim();
@@ -4394,6 +4451,9 @@ async function rlsSelfCheck() {
 
 <!-- Clippings module — same loading pattern as discovery.js -->
 <script src="./clippings.js" defer></script>
+
+<!-- OPML import/export (Manage Sources modal) -->
+<script src="./opml.js" defer></script>
 
 </body>
 </html>
