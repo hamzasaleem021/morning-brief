@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Morning Brief — The news you chose, nothing else</title>
+<meta name="description" content="Morning Brief turns up to 20 RSS feeds into one front page you can read over breakfast. No algorithm, no ads, no record of what you read.">
+<meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1e1b18" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Morning Brief">
+<meta property="og:description" content="Your sources. Your signal. Every morning.">
+<meta property="og:image" content="https://morningbrief.auxila.cc/icon-512.png">
+<meta property="og:url" content="https://morningbrief.auxila.cc/">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Morning Brief — landing page.
+   Same tokens as morning-brief.html so the front door matches the paper. */
+:root {
+  --bg: #f5f0e8;
+  --paper: #faf7f2;
+  --ink: #1a1814;
+  --ink-light: #4a4540;
+  --ink-muted: #8a847d;
+  --rule: #e0d8cc;
+  --accent: #c8502a;
+  --accent-soft: #f0e8e0;
+  --shadow: 0 1px 0 rgba(26,24,20,.04), 0 18px 40px -18px rgba(26,24,20,.28);
+  --display: 'Playfair Display', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141210;
+    --paper: #1e1b18;
+    --ink: #e8e4dc;
+    --ink-light: #b8b4ac;
+    --ink-muted: #7d776f;
+    --rule: #2e2a26;
+    --accent: #d4603a;
+    --accent-soft: #2a1f18;
+    --shadow: 0 1px 0 rgba(0,0,0,.2), 0 18px 40px -18px rgba(0,0,0,.7);
+    color-scheme: dark;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+/* Paper grain, same as the app */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .5;
+}
+body > * { position: relative; z-index: 1; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+.wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding-inline: 24px; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--body); font-weight: 500; font-size: 1rem;
+  text-decoration: none; border-radius: 6px;
+  padding: 14px 22px; min-height: 48px;
+  border: 1px solid var(--ink);
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
+.btn-ghost:hover { border-color: var(--ink); }
+.btn-sm { padding: 9px 16px; min-height: 40px; font-size: .92rem; }
+
+/* ── Top bar ─────────────────────────────────────────────── */
+.topbar { background: var(--paper); border-bottom: 1px solid var(--rule); }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 68px; }
+.wordmark {
+  font-family: var(--display); font-weight: 700; font-size: 1.35rem;
+  letter-spacing: -0.02em; text-decoration: none; color: var(--ink);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.wordmark img { width: 30px; height: 30px; border-radius: 7px; display: block; }
+
+/* ── Hero: the front page ────────────────────────────────── */
+.hero { background: var(--paper); border-bottom: 3px double var(--ink); padding: 56px 0 72px; overflow: hidden; }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 64px; align-items: center; }
+
+.dateline {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--display); font-style: italic; font-size: 1.02rem;
+  color: var(--ink-light); margin-bottom: 22px;
+}
+.dateline::after { content: ''; height: 1px; flex: 1; max-width: 120px; background: var(--ink); }
+
+.hero h1 {
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(2.7rem, 6.4vw, 5rem);
+  line-height: 1.02; letter-spacing: -0.025em;
+  color: var(--ink); max-width: 11ch;
+}
+.hero-sub {
+  font-size: 1.14rem; line-height: 1.65; color: var(--ink-light);
+  max-width: 34em; margin-top: 24px;
+}
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+
+/* The specimen edition */
+.edition {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  padding: 22px 22px 0;
+  transform: rotate(1.2deg);
+  max-height: 520px; overflow: hidden;
+  position: relative;
+}
+.edition::after { /* the fold */
+  content: ''; position: absolute; inset: auto 0 0 0; height: 110px;
+  background: linear-gradient(to bottom, transparent, var(--paper) 85%);
+  pointer-events: none;
+}
+.ed-mast { text-align: center; border-bottom: 3px double var(--ink); padding-bottom: 12px; margin-bottom: 20px; }
+.ed-mast b { display: block; font-family: var(--display); font-weight: 700; font-size: 1.9rem; line-height: 1; letter-spacing: -0.02em; }
+.ed-mast em { display: block; font-family: var(--display); font-size: .78rem; color: var(--ink-light); margin-top: 8px; }
+.ed-mast small { display: block; font-size: .7rem; color: var(--ink-muted); margin-top: 6px; }
+
+.ed-section { margin-bottom: 20px; }
+.ed-head {
+  display: flex; align-items: baseline; gap: 10px;
+  border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 10px;
+}
+.ed-head b { font-family: var(--display); font-size: 1.05rem; }
+.ed-count { margin-left: auto; font-size: .7rem; color: var(--ink-muted); }
+.ed-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; align-self: center; }
+.ed-grid { display: grid; grid-template-columns: 1.6fr 1fr; border: 1px solid var(--rule); border-radius: 3px; }
+.ed-feat { padding: 14px; border-right: 1px solid var(--rule); }
+.ed-feat h3 { font-family: var(--display); font-weight: 700; font-size: 1.02rem; line-height: 1.3; }
+.ed-feat p { font-size: .76rem; color: var(--ink-light); line-height: 1.5; margin-top: 6px; }
+.ed-list div { padding: 10px 12px; border-bottom: 1px solid var(--rule); font-family: var(--display); font-size: .8rem; line-height: 1.35; }
+.ed-list div:last-child { border-bottom: 0; }
+.ed-time { display: block; font-family: var(--body); font-size: .68rem; color: var(--ink-muted); margin-top: 6px; }
+.ed-list .ed-time { margin-top: 3px; }
+
+/* One orchestrated moment: the edition prints, section by section */
+@media (prefers-reduced-motion: no-preference) {
+  .edition .ed-mast, .edition .ed-section { animation: print .6s cubic-bezier(.2,.7,.2,1) both; }
+  .edition .ed-mast { animation-delay: .15s; }
+  .edition .ed-section:nth-of-type(1) { animation-delay: .45s; }
+  .edition .ed-section:nth-of-type(2) { animation-delay: .75s; }
+  .edition .ed-section:nth-of-type(3) { animation-delay: 1.05s; }
+  @keyframes print { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+}
+
+/* ── Sections ────────────────────────────────────────────── */
+.block { padding: 88px 0 0; }
+.block h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(1.9rem, 3.6vw, 2.6rem); line-height: 1.12; letter-spacing: -0.02em;
+  max-width: 20ch;
+}
+.block-intro { font-size: 1.06rem; color: var(--ink-light); max-width: 36em; margin-top: 14px; }
+
+/* How it works — three newspaper columns divided by rules */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 40px; border-top: 2px solid var(--ink); }
+.step { padding: 24px 28px 0 0; }
+.step + .step { padding-left: 28px; border-left: 1px solid var(--rule); }
+.step-n { font-family: var(--display); font-style: italic; font-size: 2.4rem; line-height: 1; color: var(--accent); }
+.step h3 { font-family: var(--display); font-size: 1.4rem; line-height: 1.25; margin-top: 12px; }
+.step p { color: var(--ink-light); margin-top: 10px; font-size: 1rem; max-width: 30em; }
+
+/* What this paper won't do — set like a corrections box */
+.corrections {
+  margin-top: 40px; background: var(--paper);
+  border: 1px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 4px;
+  padding: 32px 36px; max-width: 760px;
+}
+.corrections ul { list-style: none; }
+.corrections li { padding: 16px 0; border-bottom: 1px solid var(--rule); font-size: 1.04rem; color: var(--ink-light); }
+.corrections li:first-child { padding-top: 0; }
+.corrections li:last-child { border-bottom: 0; padding-bottom: 0; }
+.corrections strong { font-family: var(--display); font-weight: 700; color: var(--ink); font-size: 1.12rem; }
+
+/* The small print */
+.smallprint { columns: 2; column-gap: 56px; column-rule: 1px solid var(--rule); margin-top: 36px; max-width: 900px; }
+.smallprint p { break-inside: avoid; font-size: 1rem; color: var(--ink-light); padding-bottom: 18px; }
+.smallprint strong { color: var(--ink); font-weight: 500; }
+
+/* Closing band */
+.closing { margin-top: 96px; background: var(--paper); border-top: 3px double var(--ink); border-bottom: 1px solid var(--rule); padding: 72px 0; text-align: center; }
+.closing h2 { font-family: var(--display); font-weight: 900; font-size: clamp(2rem, 4.6vw, 3.2rem); line-height: 1.1; letter-spacing: -0.02em; max-width: 18ch; margin: 0 auto; }
+.closing .btn { margin-top: 30px; }
+.closing-note { font-size: .92rem; color: var(--ink-muted); margin-top: 14px; }
+
+/* Footer */
+footer { padding: 32px 0 40px; }
+footer .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
+.foot-links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; font-size: .92rem; color: var(--ink-muted); }
+.foot-links a { text-decoration: none; }
+.foot-links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.powered { color: var(--ink-light); }
+.powered b { font-weight: 500; color: var(--ink); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero { padding: 40px 0 56px; }
+  .hero .wrap { grid-template-columns: 1fr; gap: 48px; }
+  .edition { transform: rotate(0.8deg); max-height: 460px; }
+  .steps { grid-template-columns: 1fr; border-top: 0; }
+  .step, .step + .step { padding: 22px 0; border-left: 0; border-top: 1px solid var(--rule); }
+  .step:first-child { border-top: 2px solid var(--ink); }
+  .smallprint { columns: 1; }
+}
+@media (max-width: 560px) {
+  .wrap { padding-inline: 18px; }
+  .topbar .wrap { height: 60px; }
+  .wordmark { font-size: 1.2rem; }
+  .hero-sub { font-size: 1.05rem; }
+  .hero-actions .btn { flex: 1 1 100%; }
+  .edition { padding: 16px 14px 0; }
+  .ed-grid { grid-template-columns: 1fr; }
+  .ed-feat { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .block { padding-top: 64px; }
+  .corrections { padding: 24px 20px; outline-offset: 3px; }
+  .closing { margin-top: 72px; padding: 56px 0; }
+  footer .wrap { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="wordmark" href="./" aria-label="Morning Brief home">
+      <img src="./icon-192.png" alt="" width="30" height="30">
+      Morning Brief
+    </a>
+    <a class="btn btn-primary btn-sm" href="./morning-brief.html">Open Morning Brief</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="dateline"><span id="today">Today's edition</span></p>
+        <h1>The news you chose. Nothing else.</h1>
+        <p class="hero-sub">Morning Brief turns up to 20 RSS feeds into one front page you can read over breakfast. The five newest posts from each, in the order you set. No algorithm, no ads, no record of what you read.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="./morning-brief.html">Open Morning Brief</a>
+          <a class="btn btn-ghost" href="#how">How it works</a>
+        </div>
+      </div>
+
+      <div class="edition" aria-hidden="true">
+        <div class="ed-mast">
+          <b>Morning Brief</b>
+          <em>Your sources. Your signal. Every morning.</em>
+          <small><span id="today-short">Today</span>, 6 sources</small>
+        </div>
+
+        <div class="ed-section">
+          <div class="ed-head"><span class="ed-dot" style="background:#c8502a"></span><b>The Slow Web Review</b><span class="ed-count">5 posts</span></div>
+          <div class="ed-grid">
+            <div class="ed-feat">
+              <h3>Why every app now wants to be your second brain</h3>
+              <p>The note-taking gold rush, and who's left holding the notes.</p>
+              <span class="ed-time">2 hours ago</span>
+            </div>
+            <div class="ed-list">
+              <div>A short history of the orange feed icon<span class="ed-time">6 hours ago</span></div>
+              <div>The case for reading yesterday's news today<span class="ed-time">Yesterday</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ed-section">
+          <div class="ed-head"><span class="ed-dot" style="background:#3f7d6e"></span><b>Kitchen Table Economics</b><span class="ed-count">5 posts</span></div>
+          <div class="ed-grid">
+            <div class="ed-feat">
+              <h3>What a cup of chai costs this year, city by city</h3>
+              <p>Milk is up, sugar is down, and the dhaba still won't take cards.</p>
+              <span class="ed-time">4 hours ago</span>
+            </div>
+            <div class="ed-list">
+              <div>Rent, explained with one spreadsheet<span class="ed-time">8 hours ago</span></div>
+              <div>Is the weekly bazaar really cheaper?<span class="ed-time">Yesterday</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ed-section">
+          <div class="ed-head"><span class="ed-dot" style="background:#5a6fa8"></span><b>Small Hours</b><span class="ed-count">5 posts</span></div>
+          <div class="ed-grid">
+            <div class="ed-feat">
+              <h3>Notes from a year without a news app</h3>
+              <p>Fewer headlines, more books, one missed election debate.</p>
+              <span class="ed-time">Yesterday</span>
+            </div>
+            <div class="ed-list">
+              <div>On finishing things<span class="ed-time">2 days ago</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-n">1</div>
+          <h3>Pick your sources</h3>
+          <p>Paste any site's feed, browse 1,250 hand-sorted feeds across 67 topics, or bring your list from another reader as an OPML file.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">2</div>
+          <h3>Read your edition</h3>
+          <p>Each source gets its own section with its five newest posts. Drag sections into the order you like to read them. Pull down to refresh.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">3</div>
+          <h3>Keep the good bits</h3>
+          <p>Share a passage from your browser to Morning Brief and it's saved as a clipping, with a link back to the exact sentence.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>What this paper won't do</h2>
+      <div class="corrections">
+        <ul>
+          <li><strong>Decide what you see.</strong> There's no ranking and no "for you". Just your sources, in your order.</li>
+          <li><strong>Sell your attention.</strong> No ads, no sponsored posts, no "recommended" anything.</li>
+          <li><strong>Keep a file on you.</strong> It doesn't record what you open or read. There's no analytics at all.</li>
+          <li><strong>Scroll forever.</strong> Five posts a source, then the edition ends. You're allowed to stop.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>The small print</h2>
+      <div class="smallprint">
+        <p><strong>Works offline.</strong> Once your edition has loaded, it's still there on the train.</p>
+        <p><strong>Installs like an app.</strong> Add it to your home screen on your phone or laptop.</p>
+        <p><strong>Syncs if you want it to.</strong> Sign in with an email link to keep your sources on every device. Not required.</p>
+        <p><strong>Light and dark editions.</strong> It follows your device, or you can pick.</p>
+        <p><strong>Your list stays yours.</strong> Export your sources as OPML any time and take them to any reader.</p>
+        <p><strong>Plain about privacy.</strong> What's stored and why is all on <a href="./privacy.html">one short page</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="wrap">
+      <h2>Twenty sources. Five posts each. Then you're done.</h2>
+      <a class="btn btn-primary" href="./morning-brief.html">Open Morning Brief</a>
+      <p class="closing-note">No account needed to start.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="wordmark" href="./" aria-label="Morning Brief home">
+      <img src="./icon-192.png" alt="" width="30" height="30">
+      Morning Brief
+    </a>
+    <div class="foot-links">
+      <a href="./privacy.html">Privacy</a>
+      <a class="powered" href="https://auxila.cc">Powered by <b>auxila.cc</b></a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    try {
+      var d = new Date();
+      document.getElementById('today').textContent =
+        d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('today-short').textContent =
+        d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    } catch (e) {}
+  })();
+</script>
+</body>
+</html>
