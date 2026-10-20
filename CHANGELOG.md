@@ -1,5 +1,12 @@
 # Changelog
 
+## v30 — Powered by auxila.cc
+
+### Added
+- A small "Powered by auxila.cc" credit, linking to auxila.cc, in the account
+  sheet's footer and under the first-run welcome. The wordmark's font loads
+  only the letters it needs.
+
 ## v29 — Daylight for the front door
 
 ### Changed

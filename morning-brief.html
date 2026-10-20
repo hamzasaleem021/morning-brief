@@ -19,6 +19,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&display=swap" rel="stylesheet">
+<!-- Only the letters of the Auxila wordmark -->
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@100..125,500..900&text=auxilc.&display=swap" rel="stylesheet">
 
 <!-- Apply theme before render to prevent a flash of the wrong one -->
 <script>
@@ -728,6 +730,14 @@
     body.view-discover .app-header, body.view-share .app-header { display: none; }
     .clip-search.collapsed { display: none; }
   }
+
+  /* ── Auxila credit: the parent brand, kept small ─────────────────── */
+  .aux-credit { display: inline-flex; align-items: baseline; gap: 6px; color: var(--text-3); font-size: 13px; text-decoration: none; white-space: nowrap; }
+  .aux-credit .aux-word { font-family: 'Mona Sans', var(--sans); font-stretch: 125%; font-weight: 900; letter-spacing: -0.03em; font-size: 14px; color: var(--text); }
+  .aux-credit .aux-word i { font-style: normal; font-weight: 500; font-stretch: 100%; letter-spacing: 0; color: var(--text-3); }
+  .aux-credit:hover .aux-word { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  .welcome .aux-credit { align-self: center; margin-top: 20px; }
+  .sheet-foot a.aux-credit { text-decoration: none; }
   @media print {
     .tabbar, .app-header, .jump, .today-aside, .end, .float-card { display: none !important; }
     body { background: #fff; }
@@ -2320,6 +2330,7 @@ const Today = (() => {
             <a class="btn" href="#/sources" data-welcome-import>Import from another reader</a>
             <p class="welcome-signin">Already use Morning Brief? <button type="button" class="link-btn" data-open-account>Sign in</button></p>
           </div>
+          <a class="aux-credit" href="https://auxila.cc" target="_blank" rel="noopener">Powered by <span class="aux-word">auxila<i>.cc</i></span></a>
         </section>`;
     }
     if (mode === 'caughtup' || mode === 'allfailed') {
@@ -2912,6 +2923,7 @@ const Account = (() => {
       <div class="sheet-foot">
         <a href="./privacy.html" target="_blank" rel="noopener">Privacy</a>
         <span>We keep your sources and clippings. Nothing else.</span>
+        <a class="aux-credit" href="https://auxila.cc" target="_blank" rel="noopener">Powered by <span class="aux-word">auxila<i>.cc</i></span></a>
       </div>`, { title: 'Your account', onClose: () => { sheet = null; lastSig = ''; } });
     lastSig = '';
     refresh();
