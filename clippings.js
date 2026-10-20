@@ -1312,6 +1312,15 @@
   // ═════════════════════════════════════════════════════════════════════
 
   function init() {
+    // Escape closes the Clippings window (it had no keyboard close before)
+    document.addEventListener('keydown', (e) => {
+      const ov = document.getElementById('clippings-overlay');
+      if (e.key === 'Escape' && ov && ov.classList.contains('open')
+          && !document.querySelector('.mb-confirm-overlay.visible')) {
+        close();
+        e.stopImmediatePropagation();
+      }
+    });
     loadFromCache();
     updateBadge();
     setupAuthListener();

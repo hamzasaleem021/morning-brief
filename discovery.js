@@ -247,6 +247,7 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && overlay.classList.contains('open')) {
         overlay.classList.remove('open');
+        e.stopImmediatePropagation(); // don't also close Manage Sources underneath
       }
     });
   }

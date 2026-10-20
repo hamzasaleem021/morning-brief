@@ -1145,6 +1145,53 @@
     box-shadow: 0 0 0 3px var(--accent-soft);
   }
 
+  /* Manage Sources — layout: add first, list second, account & data last */
+  .manage-modal .modal-header { align-items: flex-start; }
+  .mm-heading { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .manage-modal .limit-line { padding: 0; margin: 0; font-size: 0.78rem; justify-content: flex-start; color: var(--ink-muted); }
+  .mm-add { display: flex; flex-direction: column; gap: 16px; margin-bottom: 8px; }
+  .mm-browse {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    padding: 14px 16px; text-align: left; cursor: pointer;
+    background: var(--ink); color: var(--paper);
+    border: 1px solid var(--ink); border-radius: 8px;
+    font-family: var(--body); transition: background 0.15s, border-color 0.15s;
+  }
+  .mm-browse:hover { background: var(--accent); border-color: var(--accent); }
+  .mm-browse:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .mm-browse-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .mm-browse-text strong { font-family: var(--display); font-size: 1.02rem; font-weight: 700; }
+  .mm-browse-text span { font-size: 0.76rem; opacity: 0.75; }
+  .mm-chevron { opacity: 0.7; flex-shrink: 0; }
+  .manage-modal .add-source-form { margin-top: 0; padding-top: 0; border-top: none; }
+  .mm-label { display: block; font-size: 0.78rem; color: var(--ink-muted); margin-bottom: 8px; }
+  .manage-modal .form-row { margin-bottom: 8px; }
+  .mm-name-input { width: 100%; font-size: 0.8rem; padding: 7px 12px; }
+  .manage-modal .add-source-form .form-row { flex-direction: row; gap: 8px; }
+  .manage-modal .add-source-form .form-row .form-input { width: auto; flex: 1; }
+  .manage-modal .add-source-form .btn-add-source { width: auto; flex: none; }
+  .manage-modal .btn-add-source {
+    background: transparent; color: var(--ink); border: 1px solid var(--ink); padding: 9px 16px;
+  }
+  .manage-modal .btn-add-source:hover { background: var(--ink); color: var(--paper); }
+  .manage-modal .btn-add-source:disabled { opacity: 0.6; cursor: progress; }
+  .manage-modal #sources-list { margin-top: 18px; border-top: 1px solid var(--rule); }
+  .mm-empty {
+    padding: 22px 0 6px; color: var(--ink-muted);
+    font-family: var(--display); font-style: italic; font-size: 0.9rem; line-height: 1.5;
+  }
+  .mm-hint { font-size: 0.72rem; color: var(--ink-muted); padding: 10px 0 0; }
+  .manage-modal .source-config-url { font-family: var(--body); letter-spacing: 0; }
+  .manage-modal .source-remove-btn {
+    border: none; border-radius: 50%; width: 32px; height: 32px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 1rem;
+  }
+  .manage-modal .source-remove-btn:hover { background: var(--accent-soft); }
+  .mm-more { margin-top: 26px; padding-top: 4px; border-top: 3px double var(--rule); }
+  .manage-modal .sync-bar { margin: 18px 0 0; background: transparent; border: 1px solid var(--rule); }
+  .manage-modal .sync-bar-row .voucher-link { font-size: 0.8rem; }
+  .manage-modal .voucher-entry, .manage-modal .install-app-row { margin-top: 14px; padding-top: 14px; }
+
   /* ═════════════════════════════════════════════════════════════════════
      SYNC BAR IN MODAL — with inline submit (Tier 1.8)
      ═════════════════════════════════════════════════════════════════════ */
@@ -2164,65 +2211,74 @@
 
 <!-- Manage Sources modal -->
 <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-  <div class="modal">
+  <div class="modal manage-modal">
     <div class="modal-header">
-      <h2 id="modal-title">Manage Sources</h2>
-      <div class="modal-header-actions">
-        <button class="btn-secondary" type="button" id="open-discover-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          Discover
-        </button>
-        <button class="modal-close" type="button" id="modal-close-btn" aria-label="Close">✕</button>
+      <div class="mm-heading">
+        <h2 id="modal-title">Your sources</h2>
+        <div class="limit-line" id="limit-line">
+          <span><span class="limit-line-count" id="limit-line-count">0</span> <span id="limit-line-of">/ 20 sources</span></span>
+          <span class="unlocked-badge" id="unlocked-badge" style="display:none;">
+            <span class="unlocked-badge-dot"></span>
+            <span>Extended limit unlocked</span>
+          </span>
+        </div>
       </div>
+      <button class="modal-close" type="button" id="modal-close-btn" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
-      <div class="sync-bar" id="sync-bar">
-        <div class="sync-bar-row">
-          <span class="sync-text" id="sync-text">Not synced across devices</span>
-          <button class="sync-btn" type="button" id="sync-btn">Sign in</button>
-        </div>
-        <div class="sync-email-row" id="sync-email-row">
-          <input type="email" class="sync-email-input" id="sync-email-input" placeholder="you@example.com" autocomplete="email" inputmode="email">
-          <button type="button" class="sync-email-submit" id="sync-email-submit">Send link</button>
+
+      <div class="mm-add">
+        <button class="mm-browse" type="button" id="open-discover-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span class="mm-browse-text">
+            <strong>Browse 1,250 sources</strong>
+            <span>Curated feeds across 67 topics</span>
+          </span>
+          <svg class="mm-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <div class="add-source-form">
+          <label class="mm-label" for="new-source-url">Or paste an RSS feed URL</label>
+          <div class="form-row">
+            <input type="url" class="form-input" id="new-source-url" placeholder="https://example.com/feed" autocomplete="off" inputmode="url">
+            <button type="button" class="btn-add-source" id="add-source-btn">Add</button>
+          </div>
+          <input type="text" class="form-input mm-name-input" id="new-source-name" placeholder="Name (optional — we'll use the feed's own)" autocomplete="off">
         </div>
       </div>
-      <div class="limit-line" id="limit-line">
-        <span><span class="limit-line-count" id="limit-line-count">0</span> <span id="limit-line-of">/ 20 sources</span></span>
-        <span class="unlocked-badge" id="unlocked-badge" style="display:none;">
-          <span class="unlocked-badge-dot"></span>
-          <span>Extended limit unlocked</span>
-        </span>
-      </div>
+
       <div id="sources-list"></div>
-      <div class="add-source-form">
-        <h3>Add by URL</h3>
-        <p class="add-source-form-sub">If you already have an RSS feed URL — otherwise use Discover.</p>
-        <div class="form-row">
-          <input type="text" class="form-input" id="new-source-name" placeholder="Source name (e.g. The Verge)" autocomplete="off">
+
+      <div class="mm-more">
+        <div class="sync-bar" id="sync-bar">
+          <div class="sync-bar-row">
+            <span class="sync-text" id="sync-text">Not synced across devices</span>
+            <button class="sync-btn" type="button" id="sync-btn">Sign in</button>
+            <button class="voucher-link" type="button" id="sync-signout-btn" style="display:none;">Sign out</button>
+          </div>
+          <div class="sync-email-row" id="sync-email-row">
+            <input type="email" class="sync-email-input" id="sync-email-input" placeholder="you@example.com" autocomplete="email" inputmode="email">
+            <button type="button" class="sync-email-submit" id="sync-email-submit">Send link</button>
+          </div>
         </div>
-        <div class="form-row">
-          <input type="url" class="form-input" id="new-source-url" placeholder="https://example.com/rss" autocomplete="off" inputmode="url">
-          <button type="button" class="btn-add-source" id="add-source-btn">Add</button>
+        <div class="voucher-entry" id="opml-row">
+          <span class="voucher-entry-text">Moving from another reader?</span>
+          <span>
+            <button type="button" class="voucher-link" id="opml-import-btn">Import OPML</button>
+            <span class="voucher-entry-text" aria-hidden="true"> · </span>
+            <button type="button" class="voucher-link" id="opml-export-btn">Export</button>
+          </span>
         </div>
-      </div>
-      <div class="install-app-row" id="install-app-row" style="display:none;">
-        <span class="install-app-text">Use as a standalone app</span>
-        <button type="button" class="voucher-link" id="install-app-btn">Install</button>
-      </div>
-      <div class="voucher-entry" id="opml-row">
-        <span class="voucher-entry-text">Moving from another reader?</span>
-        <span>
-          <button type="button" class="voucher-link" id="opml-import-btn">Import OPML</button>
-          <span class="voucher-entry-text" aria-hidden="true"> · </span>
-          <button type="button" class="voucher-link" id="opml-export-btn">Export</button>
-        </span>
-      </div>
-      <div class="voucher-entry">
-        <span class="voucher-entry-text" id="voucher-entry-text">Need more than 20 sources?</span>
-        <button type="button" class="voucher-link" id="voucher-redeem-link">Redeem a code</button>
+        <div class="install-app-row" id="install-app-row" style="display:none;">
+          <span class="install-app-text">Use as a standalone app</span>
+          <button type="button" class="voucher-link" id="install-app-btn">Install</button>
+        </div>
+        <div class="voucher-entry">
+          <span class="voucher-entry-text" id="voucher-entry-text">Need more than 20 sources?</span>
+          <button type="button" class="voucher-link" id="voucher-redeem-link">Redeem a code</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2803,6 +2859,12 @@ const Sync = (() => {
       if (error) throw error;
     },
 
+    async signOut() {
+      const { error } = await db.auth.signOut();
+      if (error) throw error;
+    },
+
+    userEmail() { return currentUser?.email || ''; },
     isLoggedIn() { return !!currentUser; },
     hasPending() { return hasPendingChanges; }
   };
@@ -3035,6 +3097,12 @@ const UI = (() => {
       link = linkEl?.textContent?.trim() || linkEl?.getAttribute('href') || '';
     }
     if (!link) link = `https://${source.domain}`;
+    // Only ever link out to normal web pages — never javascript:/data: etc.
+    // Relative links are resolved against the source's own site.
+    try {
+      const u = new URL(link, `https://${source.domain}`);
+      link = (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : `https://${source.domain}`;
+    } catch { link = `https://${source.domain}`; }
 
     // Date — try multiple fields, graceful fallback (no more "Invalid Date")
     const dateStr = isAtom
@@ -3363,10 +3431,14 @@ const UI = (() => {
         not_synced: { text: text || 'Not synced across devices', btn: 'none', email: 'flex' }
       };
       const s = styles[state] || styles.not_synced;
-      syncText.textContent = s.text;
+      const signedIn = typeof Sync !== 'undefined' && Sync.isLoggedIn();
+      const email = signedIn ? Sync.userEmail() : '';
+      syncText.textContent = (state === 'synced' && email) ? `Synced as ${email}` : s.text;
       syncBtn.style.display = s.btn;
       if (s.btnText) syncBtn.textContent = s.btnText;
-      if (emailRow) emailRow.style.display = s.email || 'none';
+      if (emailRow) emailRow.style.display = signedIn ? 'none' : (s.email || 'none');
+      const outBtn = document.getElementById('sync-signout-btn');
+      if (outBtn) outBtn.style.display = signedIn ? 'inline-block' : 'none';
     },
 
     showSyncSaveBanner() {
@@ -3381,7 +3453,7 @@ const UI = (() => {
       const list = document.getElementById('sources-list');
       const sources = State.getSources();
       if (!sources.length) {
-        list.innerHTML = `<p style="color:var(--ink-muted);font-size:0.85rem;padding:12px 0;font-style:italic;font-family:var(--display);">No sources yet — tap Discover above to browse, or add by URL below.</p>`;
+        list.innerHTML = `<p class="mm-empty">No sources yet. Browse the catalogue above, or paste a feed you already read.</p>`;
         return;
       }
       list.innerHTML = sources.map(s => {
@@ -3398,11 +3470,11 @@ const UI = (() => {
           <div class="source-color-dot" style="background:${color}"></div>
           <div class="source-config-info">
             <div class="source-config-name">${esc(s.name)}</div>
-            <div class="source-config-url">${esc(s.rss)}</div>
+            <div class="source-config-url" title="${esc(s.rss)}">${esc(s.domain || s.rss)}</div>
           </div>
-          <button type="button" class="source-remove-btn" data-remove-id="${esc(s.id)}" aria-label="Remove ${esc(s.name)}">Remove</button>
+          <button type="button" class="source-remove-btn" data-remove-id="${esc(s.id)}" aria-label="Remove ${esc(s.name)}" title="Remove">✕</button>
         </div>
-      `;}).join('');
+      `;}).join('') + (sources.length > 1 ? `<p class="mm-hint">Drag the handle to reorder. Your brief follows this order.</p>` : '');
       initSortable(list);
     },
 
@@ -3721,6 +3793,23 @@ function promptVoucher() {
 // All awaits on Sync are propagated so failures can be surfaced.
 // ═══════════════════════════════════════════════════════════════════════
 
+// Best-effort name for a pasted feed: its own <title>, else a tidy domain.
+async function guessFeedName(url) {
+  let fallback;
+  try { fallback = stripWWW(new URL(url).hostname); } catch { fallback = url; }
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch(`${CFG.RSS_PROXY}${encodeURIComponent(url)}`, { signal: ctrl.signal });
+    if (!res.ok) return fallback;
+    const xml = new DOMParser().parseFromString(await res.text(), 'application/xml');
+    if (xml.querySelector('parsererror')) return fallback;
+    const t = xml.querySelector('channel > title, feed > title')?.textContent?.trim();
+    return t ? t.slice(0, 80) : fallback;
+  } catch { return fallback; }
+  finally { clearTimeout(timer); }
+}
+
 async function addSource(name, url) {
   // When called without args (form button), read from inputs
   const fromForm = name === undefined && url === undefined;
@@ -3729,11 +3818,18 @@ async function addSource(name, url) {
     url  = document.getElementById('new-source-url').value.trim();
   }
 
-  if (!name || !url) {
-    UI.toast('Please enter both a name and an RSS URL.');
+  if (!url) {
+    UI.toast('Paste an RSS feed URL first.');
     return { ok: false };
   }
-  try { new URL(url); } catch { UI.toast('Please enter a valid URL (including https://).'); return { ok: false }; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); } catch { UI.toast('That doesn\'t look like a web address.'); return { ok: false }; }
+  if (!name) {
+    const btn = fromForm ? document.getElementById('add-source-btn') : null;
+    if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+    name = await guessFeedName(url);
+    if (btn) { btn.disabled = false; btn.textContent = 'Add'; }
+  }
 
   const id = 'src_' + uuid();
   let domain;
@@ -3876,14 +3972,12 @@ async function refreshAll() {
   }
 }
 
-function openManageModal(initialDiscover = false) {
+function openManageModal() {
   UI.renderModal();
   UI.setSyncStatus(Sync.isLoggedIn() ? 'synced' : 'not_synced');
   document.getElementById('modal-overlay').classList.add('open');
-  // If no sources yet, open Discover immediately (Tier 0.5)
-  if (initialDiscover || (State.getCount() === 0 && window.Discover)) {
-    setTimeout(() => window.Discover?.open(), 250);
-  }
+  // Discover is never opened automatically — the "Browse" button is the
+  // first thing in the modal, so new users find it without a pop-up.
   activateFocusTrap('modal-overlay');
 }
 
@@ -3905,6 +3999,10 @@ function activateFocusTrap(overlayId) {
 
   _focusTrapKeyHandler = (e) => {
     if (e.key === 'Escape') {
+      // A dialog stacked on top (confirm, code entry, Discover, Clippings)
+      // owns this Escape — close only that, not the window underneath.
+      const above = document.querySelector('.mb-confirm-overlay.visible, #discover-overlay.open, #clippings-overlay.open');
+      if (above && above !== _focusTrapTarget) return;
       _focusTrapTarget.classList.remove('open');
       deactivateFocusTrap();
       return;
@@ -3982,8 +4080,12 @@ function applyTheme(t) {
 }
 
 function toggleTheme() {
-  const current = localStorage.getItem(CFG.THEME_KEY) || 'auto';
-  const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+  let current = 'auto';
+  try { current = localStorage.getItem(CFG.THEME_KEY) || 'auto'; } catch(e) {}
+  // Every tap visibly flips: system → the opposite look → back to system.
+  const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const opposite = sys === 'dark' ? 'light' : 'dark';
+  const next = current === opposite ? 'auto' : opposite;
   try { localStorage.setItem(CFG.THEME_KEY, next); } catch(e) {}
   applyTheme(next);
 }
@@ -4108,7 +4210,7 @@ function setupEventDelegation() {
     }
 
     // Chrome buttons
-    if (t.closest('#manage-sources-btn')) { openManageModal(State.getCount() === 0); return; }
+    if (t.closest('#manage-sources-btn')) { openManageModal(); return; }
     if (t.closest('#clippings-btn')) { window.Clippings?.open(); return; }
     if (t.closest('#theme-toggle') || t.closest('#theme-toggle-mobile')) { toggleTheme(); return; }
 
@@ -4138,7 +4240,18 @@ function setupEventDelegation() {
       return;
     }
     if (t.closest('#sync-email-submit')) { await handleMagicLink(); return; }
-    if (t.closest('#welcome-cta-btn')) { openManageModal(true); return; }
+    if (t.closest('#sync-signout-btn')) {
+      const ok = await UI.confirm('Sign out of Morning Brief?', { okText: 'Sign out', cancelText: 'Cancel' });
+      if (!ok) return;
+      try {
+        await Sync.signOut();
+        UI.toast('Signed out. Your sources stay on this device.');
+      } catch (err) {
+        UI.toast('Couldn\'t sign out — check your connection and try again.');
+      }
+      return;
+    }
+    if (t.closest('#welcome-cta-btn')) { openManageModal(); return; }
     if (t.closest('#refresh-btn')) { await refreshAll(); return; }
 
     // Install card
