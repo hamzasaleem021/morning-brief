@@ -27,7 +27,9 @@ discovery.js             — Source catalog browser ("Discover")
 discovery-sources.json   — 1,250 curated RSS feeds across 67 categories
 opml.js                  — OPML import/export (Sources screen)
 clippings.js             — Clippings: share-target intake, list, sync
-privacy.html             — Privacy policy (shares the app's stylesheet)
+privacy.html             — Privacy policy
+index.html               — Landing page
+emails/                  — Sign-in email templates for Supabase Auth
 manifest.json            — PWA manifest
 icon-192.png, icon-512.png — App icons
 ```
@@ -184,6 +186,15 @@ export default {
   }
 };
 ```
+
+### Sign-in emails
+
+Sign-in emails are Supabase Auth templates, sent through Resend over SMTP. Daylight versions live in `emails/`:
+
+- `emails/magic-link.html` → Supabase dashboard → Authentication → Emails → **Magic Link**. Subject: `Your Morning Brief sign-in link`
+- `emails/confirm-signup.html` → the **Confirm signup** template, used the first time an email signs in. Subject: `Confirm your email for Morning Brief`
+
+Paste each file into the template's HTML body. `{{ .ConfirmationURL }}` is filled in by Supabase. The logo loads from `https://morningbrief.auxila.cc/icon-192.png`.
 
 ## Install prompt
 
