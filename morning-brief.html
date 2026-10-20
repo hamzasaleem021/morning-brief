@@ -176,6 +176,14 @@
   .peb.c5 { background: var(--moss);   color: var(--moss-ink); }
   .peb.c6 { background: var(--cobalt); color: var(--cobalt-ink); }
   .peb.neutral { box-shadow: inset 0 -2px 0 rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.35); }
+  /* A source's color as one variable, for the bar beside a kept passage */
+  .tone.c0 { --tone: var(--teal); }  .tone.c1 { --tone: var(--ochre); } .tone.c2 { --tone: var(--pink); }
+  .tone.c3 { --tone: var(--lav); }   .tone.c4 { --tone: var(--peach); } .tone.c5 { --tone: var(--moss); }
+  .tone.c6 { --tone: var(--cobalt); }
+
+  /* A kept passage: upright serif for easy reading, marked by a bar in its source's color */
+  .quote { position: relative; padding-left: 16px; font-family: var(--serif); font-optical-sizing: auto; font-weight: 400; color: var(--text); text-wrap: pretty; overflow-wrap: anywhere; }
+  .quote::before { content: ''; position: absolute; left: 0; top: .3em; bottom: .3em; width: 3px; border-radius: 3px; background: var(--tone, var(--text-3)); }
 
   /* ── Buttons, chips, inputs ───────────────────────────────────────── */
   .btn {
@@ -239,10 +247,11 @@
   }
   .switch .track {
     width: 46px; height: 28px; border-radius: 9999px; padding: 3px;
-    background: var(--strong); display: flex; justify-content: flex-start; transition: background .15s;
+    background: var(--strong); display: flex; justify-content: flex-start; transition: background .18s ease;
   }
-  .switch .knob { width: 22px; height: 22px; border-radius: 50%; background: var(--bg); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
-  .switch[aria-checked="true"] .track { background: var(--text); justify-content: flex-end; }
+  .switch .knob { width: 22px; height: 22px; border-radius: 50%; background: var(--bg); box-shadow: 0 1px 2px rgba(0,0,0,.18); transition: transform .22s cubic-bezier(.3,1.4,.5,1); }
+  .switch[aria-checked="true"] .track { background: var(--text); }
+  .switch[aria-checked="true"] .knob { transform: translateX(18px); }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
 
@@ -411,7 +420,7 @@
   .side-row.dim .name { color: var(--text-3); }
   .side-foot { padding: 12px 18px 18px; border-top: 1px solid var(--border-soft); margin-top: 6px; }
   .clip-mini { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .clip-mini blockquote { font-family: var(--serif); font-size: 18px; line-height: 1.4; font-style: italic; }
+  .clip-mini blockquote { padding-left: 13px; font-size: 16px; line-height: 1.5; }
   .clip-mini figcaption { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-3); }
 
   /* Banners */
@@ -519,12 +528,12 @@
   .clip-top .who { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .clip-top .when { font-size: 13px; color: var(--text-3); white-space: nowrap; }
   .clip-top .icon-btn { width: 36px; height: 36px; margin: -6px -8px -6px 0; }
-  .clip blockquote { font-family: var(--serif); font-optical-sizing: auto; font-size: 22px; line-height: 1.35; font-style: italic; overflow-wrap: anywhere; }
+  .clip blockquote { font-size: 19px; line-height: 1.55; white-space: pre-line; max-width: 34em; }
   .clip-note { border-radius: 12px; background: var(--surface-2); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
   .clip-note .k { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-3); }
   .clip-note .v { font-size: 14px; line-height: 1.45; color: var(--text-2); white-space: pre-wrap; }
   .clip-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
-  .clip-foot .title { font-size: 13px; line-height: 1.4; color: var(--text-3); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .clip-foot .title { font-size: 14px; line-height: 1.4; color: var(--text-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .clip-foot .go { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
   .clip-foot:hover .go { text-decoration: underline; text-underline-offset: 3px; }
   .clip-empty { padding: 32px 20px 0; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -538,7 +547,7 @@
   .match .src { font-size: 15px; font-weight: 600; }
   .match .art { font-family: var(--serif); font-size: 17px; line-height: 1.3; color: var(--text-2); overflow-wrap: anywhere; }
   .match .ok { margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-3); }
-  .passage { resize: none; min-height: 168px; font-family: var(--serif); font-size: 19px; line-height: 1.5; font-style: italic; }
+  .passage { resize: none; min-height: 168px; font-family: var(--serif); font-optical-sizing: auto; font-size: 18px; line-height: 1.55; }
   .field-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 
   /* ── Sheets (bottom sheet on phones, dialog on wide screens) ──────── */
@@ -683,6 +692,7 @@
     .hero h1 { font-size: clamp(44px, 5.4vw, 72px); letter-spacing: -0.03em; }
     .hero-sub { margin-top: 4px; font-size: 17px; }
     .hero-sun { width: 200px; height: 100px; max-width: 100%; }
+    .clip blockquote { font-size: 20px; }
     .sec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px; align-items: start; }
     .sec-grid .story.lead .story-title { font-size: 21px; }
     .sec-grid .story-title { font-size: 17px; }
@@ -715,6 +725,59 @@
     .phone-only { display: none !important; }
   }
 
+  /* ── Micro-interactions ───────────────────────────────────────────── */
+  /* Press feedback: everything you can tap gives a little under your finger */
+  .btn, .chip, .icon-btn, .d-add, .seg button, .tabbar a, .top-nav a, .avatar-btn, .refresh-wide,
+  .retry, .switch, .mb-toast-action, .link-btn, .topic-row, .src-main, .side-row {
+    transition: transform .12s ease, background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .btn:active, .chip:active, .d-add:active, .seg button:active, .retry:active, .mb-toast-action:active, .refresh-wide:active { transform: scale(.96); }
+  .icon-btn:active, .avatar-btn:active, .switch:active { transform: scale(.92); }
+  .tabbar a:active, .top-nav a:active { transform: scale(.95); }
+  .story:active, .fold-row:active, .more-btn:active, .topic-row:active, .side-row:active { background: var(--surface-3); }
+  .more-btn svg { transition: transform .2s ease; }
+  .story-title, .story-excerpt { transition: color .35s ease; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Each screen settles in */
+    .view.active { animation: mbViewIn .22s ease both; }
+    @keyframes mbViewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    /* Stories revealed by "more" or an opened fold slide in, one after another */
+    .story.reveal { animation: mbIn .32s cubic-bezier(.2,.8,.2,1) both; }
+    .story.reveal:nth-child(4) { animation-delay: .04s; } .story.reveal:nth-child(5) { animation-delay: .08s; }
+    .story.reveal:nth-child(6) { animation-delay: .12s; } .story.reveal:nth-child(n+7) { animation-delay: .16s; }
+    @keyframes mbIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    /* Opened: the check pops in */
+    .story.just-opened .opened-mark { animation: mbPop .38s cubic-bezier(.3,1.5,.5,1) both; }
+    @keyframes mbPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+    /* The section you jumped to says hello */
+    .flash { animation: mbFlash 1.3s ease both; }
+    @keyframes mbFlash { 0%, 35% { box-shadow: inset 0 0 0 2px var(--text-3); } 100% { box-shadow: inset 0 0 0 2px transparent; } }
+    /* The count settles when it changes */
+    .bump { animation: mbBump .45s cubic-bezier(.3,1.4,.5,1); }
+    @keyframes mbBump { 0% { transform: translateY(6px); opacity: .4; } 100% { transform: none; opacity: 1; } }
+    /* The sun rises as you reach the end of the brief */
+    .end svg.rise-in { animation: mbEndRise .9s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes mbEndRise { from { opacity: 0; transform: translateY(18px) scale(.94); } to { opacity: 1; transform: none; } }
+    /* Tap the sun */
+    .hero-sun.hop { animation: mbHop .6s cubic-bezier(.3,1.5,.5,1); transform-origin: 50% 100%; }
+    @keyframes mbHop { 0% { transform: none; } 35% { transform: translateY(-8px) scale(1.04); } 70% { transform: translateY(1px) scale(.99); } 100% { transform: none; } }
+    /* A source just added in Discover */
+    .d-row.just .peb { animation: mbPop .45s cubic-bezier(.3,1.5,.5,1) both; }
+    .d-row.just .d-add { animation: mbPop .35s ease both; }
+    /* End-of-brief cards */
+    .moment-card { animation: mbIn .4s cubic-bezier(.2,.8,.2,1) .15s both; }
+  }
+
+  /* End-of-brief cards: earned, once, easy to dismiss */
+  .moment { width: 100%; max-width: 440px; margin-top: 10px; }
+  .empty .moment { margin: 22px auto 0; }
+  .moment-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; text-align: left; display: flex; flex-direction: column; gap: 6px; }
+  .moment-card .t { font-size: 15px; font-weight: 600; }
+  .moment-card .d { font-size: 14px; line-height: 1.5; color: var(--text-2); }
+  .moment-card .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .acct-sibling { flex-basis: 100%; }
+
   /* ── Assembly additions ───────────────────────────────────────────── */
   .welcome-signin { margin-top: 12px; text-align: center; font-size: 14px; color: var(--text-2); }
   .empty .checked { margin-top: 20px; }
@@ -722,7 +785,7 @@
   .src-empty { padding: 20px 16px; font-size: 14px; line-height: 1.5; color: var(--text-2); }
   .hint.is-error { color: var(--bad); }
   .d-add[aria-disabled="true"] { cursor: default; }
-  .clip-lede { font-family: var(--serif); font-style: italic; font-size: 17px; }
+  .sheet .clip-lede { margin-top: 10px; font-size: 17px; line-height: 1.5; }
   .sec[tabindex="-1"]:focus, .quiet-row[tabindex="-1"]:focus { outline: none; }
   @media (max-width: 759px) {
     body.view-discover .app-header, body.view-share .app-header { display: none; }
@@ -1668,6 +1731,7 @@ const ICON = {
   grip: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
   person: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   install: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>',
+  share: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
   out: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg>'
 };
 
@@ -1734,6 +1798,7 @@ const Brief = (() => {
         } catch (e) {}
       }
       brief = { startedAt: now, since, lastSeen: now };
+      Moments.onNewBrief();
     }
     writeJSON(KEY, brief);
 
@@ -1770,6 +1835,7 @@ const Brief = (() => {
   function rollover(now) {
     brief = { startedAt: now, since: brief.lastSeen, lastSeen: now };
     writeJSON(KEY, brief);
+    Moments.onNewBrief();
     justAdded.clear();
     Today.onNewBrief();
     Feeds.refetchAll();
@@ -2255,6 +2321,7 @@ const Today = (() => {
   const wideMQ = window.matchMedia('(min-width: 760px)');
   const expanded = new Set();  // sections showing all their stories
   const foldOpen = new Set();  // folded sources opened in place
+  const justOpened = new Set(); // opened this render: their stories slide in once
   let earlier = false;
   let raf = 0;
 
@@ -2307,6 +2374,7 @@ const Today = (() => {
         <p class="say" id="t-end-say"></p>
         <p class="sub" id="t-end-sub"></p>
         <button type="button" class="btn small" id="t-earlier" data-earlier aria-pressed="false">See earlier stories</button>
+        <div class="moment" id="t-moment" hidden></div>
       </div>`;
   }
 
@@ -2347,6 +2415,7 @@ const Today = (() => {
                  <a class="btn" href="#/clippings">Open clippings</a>`}
           </div>
           <p class="hint tnum checked" id="t-checked"></p>
+          ${failed ? '' : '<div class="moment" id="t-moment" hidden></div>'}
         </section>`;
     }
     if (mode === 'allhidden') {
@@ -2382,9 +2451,9 @@ const Today = (() => {
   }
 
   // ── Pieces ──────────────────────────────────────────────────────────
-  function storyHTML(it, s, lead) {
+  function storyHTML(it, s, lead, reveal) {
     const opened = Brief.isOpened(it.h);
-    const cls = ['story', lead && 'lead', opened && 'opened', earlier && !it.isNew && 'earlier'].filter(Boolean).join(' ');
+    const cls = ['story', lead && 'lead', opened && 'opened', earlier && !it.isNew && 'earlier', reveal && 'reveal'].filter(Boolean).join(' ');
     const meta = [it.readMin ? `${it.readMin} min` : '', it.ts ? timeAgo(it.ts) : ''].filter(Boolean).join(' · ');
     const tag = lead ? 'h3' : 'h4';
     return `
@@ -2412,7 +2481,7 @@ const Today = (() => {
           <div class="sec-id"><span class="sec-name" id="sn-${esc(s.id)}">${esc(s.name)}</span><span class="sec-domain">${esc(s.domain || '')}</span></div>
           <span class="sec-count tnum">${esc(countLabel(x))}</span>
         </div>
-        ${list.map((it, i) => storyHTML(it, s, i === 0)).join('')}
+        ${list.map((it, i) => storyHTML(it, s, i === 0, i >= 2 && justOpened.has(s.id))).join('')}
         ${more > 0 ? `<button type="button" class="more-btn" id="more-${esc(s.id)}" data-more="${esc(s.id)}" aria-expanded="${open}">${esc(moreLabel)}${ICON.chevron}</button>` : ''}
       </article>`;
   }
@@ -2434,7 +2503,7 @@ const Today = (() => {
                 ${ICON.chevron}
               </button>
               <div class="fold-body" id="fb-${esc(s.id)}"${open ? '' : ' hidden'}>
-                ${open ? shown.map((it, i) => storyHTML(it, s, i === 0)).join('') : ''}
+                ${open ? shown.map((it, i) => storyHTML(it, s, i === 0, justOpened.has(s.id))).join('') : ''}
               </div>
             </div>`;
         }).join('')}
@@ -2485,7 +2554,7 @@ const Today = (() => {
           const when = dayDiff(new Date(c.savedAt).getTime()) === 0 ? 'Today' : timeAgo(new Date(c.savedAt).getTime());
           return `
             <figure class="card clip-mini">
-              <blockquote>${esc(c.text.length > 180 ? c.text.slice(0, 180).trim() + '…' : c.text)}</blockquote>
+              <blockquote class="quote${src ? ' tone c' + State.colorFor(src) : ''}">${esc(c.text.length > 180 ? c.text.slice(0, 180).trim() + '…' : c.text)}</blockquote>
               <figcaption>${src ? pebHTML(src, 'xs') : `<span class="peb xs neutral" aria-hidden="true">${esc(pebLetter(c.sourceName))}</span>`}${esc(c.sourceName || c.sourceDomain || '')} · ${esc(when.charAt(0).toUpperCase() + when.slice(1))}</figcaption>
             </figure>`;
         }).join('')}
@@ -2508,6 +2577,7 @@ const Today = (() => {
         : `Your ${n} sources haven't posted since you last looked. New stories show up here as soon as they do.`);
       const lc = Feeds.lastChecked();
       setText('t-checked', lc ? `Last checked ${timeAgo(lc)}` : '');
+      Moments.fill($('t-moment'));
       return;
     }
     if (m.mode === 'allfailed') {
@@ -2524,7 +2594,10 @@ const Today = (() => {
     if (earlier) h1 = plural(m.shownTotal, 'story', 'stories');
     else if (!m.newTotal && m.loading) h1 = 'Checking your sources';
     else h1 = `${m.newTotal} new ${m.newTotal === 1 ? 'story' : 'stories'}`;
+    const h1El = $('t-h1');
+    const prevH1 = h1El ? h1El.textContent : '';
     setText('t-h1', h1);
+    if (h1El && prevH1 && prevH1 !== h1) bump(h1El);
     const from = `From your ${plural(n, 'source')}`;
     setText('t-sub', earlier
       ? `Everything we fetched from your ${plural(n, 'source')}, new and earlier. Your order, nothing ranked.`
@@ -2563,10 +2636,12 @@ const Today = (() => {
       : (since ? `That's everything since ${sincePhrase(since)}.` : "That's everything for now."));
     setText('t-end-sub', m.loading
       ? `Still checking ${plural(m.loading, 'source')}…`
-      : (wide ? 'Check for new stories any time.' : 'Pull down to check for new stories.'));
+      : (wide ? Moments.signoff() : `${Moments.signoff()} Pull down to check for new stories.`));
     const eb = $('t-earlier');
     eb.textContent = earlier ? 'Show only new stories' : 'See earlier stories';
     eb.setAttribute('aria-pressed', String(earlier));
+    if (!m.loading) Moments.fill($('t-moment'));
+    else $('t-moment').hidden = true;
   }
 
   function render() {
@@ -2580,13 +2655,39 @@ const Today = (() => {
     if (root.dataset.key !== key) {
       root.innerHTML = shell(m.mode, wide);
       root.dataset.key = key;
+      watchEnd(root);
     }
     fill(m, wide);
+    justOpened.clear();
     if (activeId && !root.contains(document.activeElement)) {
       const back = $(activeId);
       if (back) back.focus({ preventScroll: true });
     }
     Router.updateChrome();
+  }
+
+  // A short animation, replayed each time (removing the class first)
+  function bump(el, cls = 'bump') {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+  }
+
+  // The risen sun at the end of the brief rises as it scrolls into view
+  let endWatcher = null;
+  function watchEnd(root) {
+    if (endWatcher) { endWatcher.disconnect(); endWatcher = null; }
+    const sun = root.querySelector('.end svg');
+    if (!sun || !('IntersectionObserver' in window)) return;
+    endWatcher = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) {
+        sun.classList.add('rise-in');
+        endWatcher.disconnect();
+        endWatcher = null;
+      }
+    }, { threshold: 0.6 });
+    endWatcher.observe(sun);
   }
 
   function setEarlier(on) {
@@ -2602,6 +2703,7 @@ const Today = (() => {
     const target = $('src-' + id);
     if (!target) return;
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    bump(target, 'flash');
     const focusEl = $('fr-' + id) || target;
     if (focusEl === target) target.setAttribute('tabindex', '-1');
     focusEl.focus({ preventScroll: true });
@@ -2611,20 +2713,168 @@ const Today = (() => {
 
   return {
     render, schedule, jumpTo,
-    toggleMore(id) { expanded.has(id) ? expanded.delete(id) : expanded.add(id); render(); },
-    toggleFold(id) { foldOpen.has(id) ? foldOpen.delete(id) : foldOpen.add(id); render(); },
+    toggleMore(id) {
+      if (expanded.has(id)) expanded.delete(id); else { expanded.add(id); justOpened.add(id); }
+      render();
+    },
+    toggleFold(id) {
+      if (foldOpen.has(id)) foldOpen.delete(id); else { foldOpen.add(id); justOpened.add(id); }
+      render();
+    },
+    newCount() { return model().newTotal; },
+    hop(el) { bump(el, 'hop'); },
     toggleEarlier() { setEarlier(!earlier); },
     showEarlier() { setEarlier(true); },
     // A new brief starts fresh: only new stories, nothing expanded.
     onNewBrief() { earlier = false; expanded.clear(); foldOpen.clear(); schedule(); },
     // Opened stories grey out in place — no re-render.
     markOpened(h) {
+      if (!Brief.isOpened(h)) Moments.noteOpened(h);
       Brief.markOpened(h);
-      document.querySelectorAll(`a.story[data-h="${CSS.escape(h)}"]`).forEach(a => a.classList.add('opened'));
+      document.querySelectorAll(`a.story[data-h="${CSS.escape(h)}"]`).forEach(a => {
+        if (!a.classList.contains('opened')) a.classList.add('opened', 'just-opened');
+      });
     }
   };
 })();
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// MOMENTS — small, earned, once.
+// Shown only at natural endings (the end of a brief, the nothing-new
+// screen), never mid-read. One card per brief at most; each card shows in
+// at most two briefs and any answer retires it for good. Every count here
+// stays on this device. Nothing is ranked or recommended.
+// ═══════════════════════════════════════════════════════════════════════
+
+const Moments = (() => {
+  const KEY = 'morning_brief_moments';
+  const MAX_SHOWS = 2;
+  let st = null;
+
+  function load() {
+    if (st) return st;
+    try { st = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { st = null; }
+    if (!st || typeof st !== 'object') st = {};
+    st.briefs = st.briefs || 0;
+    st.opened = st.opened || 0;
+    st.done = st.done || {};
+    st.shown = st.shown || {};
+    return st;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  const CARDS = [
+    {
+      id: 'tips',
+      when: s => s.briefs >= 2 && State.getCount() >= 1,
+      t: 'Three small things worth knowing',
+      d: 'Switch a source off in Sources to rest it without losing it. Paste any website to add it. And share a passage from any article to keep it in Clippings.',
+      go: 'Go to Sources', later: 'Got it',
+      act: () => Router.navigate('#/sources')
+    },
+    {
+      id: 'signin',
+      when: s => s.briefs >= 3 && State.getCount() >= 3 && !Sync.isLoggedIn(),
+      t: 'Keep your list safe',
+      d: 'Sign in with your email and your sources follow you to every phone and computer. No password.',
+      go: 'Sign in', later: 'Not now',
+      act: () => Account.open()
+    },
+    {
+      id: 'share',
+      when: s => s.briefs >= 5 && s.opened >= 8,
+      t: 'Enjoying a calmer morning?',
+      d: 'Morning Brief is better with friends who read. Share it with someone who follows a lot of sites.',
+      go: 'Share Morning Brief', later: 'Not now',
+      act: () => shareApp()
+    }
+  ];
+
+  // The card for this brief, chosen once so it doesn't change under you
+  function current() {
+    const s = load();
+    const startedAt = Brief.startedAt();
+    if (s.briefAt === startedAt) return CARDS.find(c => c.id === s.card) || null;
+    s.briefAt = startedAt;
+    const card = CARDS.find(c => !s.done[c.id] && (s.shown[c.id] || 0) < MAX_SHOWS && c.when(s)) || null;
+    s.card = card ? card.id : null;
+    if (card) s.shown[card.id] = (s.shown[card.id] || 0) + 1;
+    save();
+    return card;
+  }
+
+  function fill(slot) {
+    if (!slot) return;
+    const card = current();
+    if (!card || load().done[card.id]) { slot.hidden = true; slot.innerHTML = ''; slot.dataset.card = ''; return; }
+    if (slot.dataset.card === card.id && !slot.hidden) return;   // already showing: no replay
+    slot.dataset.card = card.id;
+    slot.innerHTML = `
+      <div class="moment-card" role="region" aria-label="${esc(card.t)}">
+        <p class="t">${esc(card.t)}</p>
+        <p class="d">${esc(card.d)}</p>
+        <div class="row">
+          <button type="button" class="btn small primary" data-moment-go="${card.id}">${esc(card.go)}</button>
+          <button type="button" class="btn small quiet" data-moment-close="${card.id}">${esc(card.later)}</button>
+        </div>
+      </div>`;
+    slot.hidden = false;
+  }
+
+  function retire(id) {
+    const s = load();
+    s.done[id] = 1;
+    save();
+    document.querySelectorAll('#t-moment').forEach(el => { el.hidden = true; el.innerHTML = ''; el.dataset.card = ''; });
+  }
+
+  // A sign-off that fits the time of day; the very first brief gets its own
+  function signoff() {
+    const s = load();
+    if (s.briefs <= 1) return 'That was your first brief. Same time tomorrow?';
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'Enjoy the rest of your morning.';
+    if (h >= 12 && h < 17) return 'Enjoy your afternoon.';
+    if (h >= 17 && h < 22) return 'Have a good evening.';
+    return 'Get some rest. Your next brief will be here when you wake up.';
+  }
+
+  return {
+    fill, signoff, retire,
+    onNewBrief() { const s = load(); s.briefs += 1; save(); },
+    noteOpened() { const s = load(); s.opened += 1; save(); },
+    go(id) {
+      const card = CARDS.find(c => c.id === id);
+      retire(id);
+      if (card) card.act();
+    }
+  };
+})();
+
+// Tell a friend: the share sheet where there is one, otherwise copy a link
+async function shareApp() {
+  const url = 'https://morningbrief.auxila.cc';
+  const text = 'Morning Brief: the writers and publications you choose, in your order. Nothing ranked, and every brief has an end.';
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Morning Brief', text, url }); return 'shared'; }
+    catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
+  }
+  try {
+    await navigator.clipboard.writeText(`${text} ${url}`);
+    UI.toast('Link copied. Paste it wherever you like.');
+    return 'copied';
+  } catch (e) {
+    UI.toast(`Share this link: ${url}`, { duration: 6000 });
+    return 'failed';
+  }
+}
+
+// A light tap on phones that support it, for deliberate actions only
+function buzz(pattern = 8) {
+  if (typeof navigator.vibrate !== 'function') return;
+  try { navigator.vibrate(pattern); } catch (e) {}
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // ROUTER — #/  #/clippings  #/sources  #/discover
@@ -2840,6 +3090,7 @@ function initSortable(list) {
 }
 
 async function commitOrder(ids, focusId) {
+  buzz(6);
   State.reorderByIds(ids);
   Persist.save();
   SourcesView.render();
@@ -2921,6 +3172,7 @@ const Account = (() => {
       <div class="sheet-foot">
         <a href="./privacy.html" target="_blank" rel="noopener">Privacy</a>
         <span>We keep your sources and clippings. Nothing else.</span>
+        <span class="acct-sibling">Also from Auxila: <a href="https://openloops.auxila.cc" target="_blank" rel="noopener">Open Loops</a>, a calm place for unfinished things.</span>
         <a class="aux-credit" href="https://auxila.cc" target="_blank" rel="noopener">Powered by <span class="aux-word">auxila<i>.cc</i></span></a>
       </div>`, { title: 'Your account', onClose: () => { sheet = null; lastSig = ''; } });
     lastSig = '';
@@ -2970,6 +3222,7 @@ const Account = (() => {
   function menuHTML() {
     return [
       !isStandalone ? `<button type="button" id="install-app-btn">${ICON.install}Install Morning Brief</button>` : '',
+      `<button type="button" id="acct-share">${ICON.share}Share Morning Brief</button>`,
       Sync.isLoggedIn() ? `<button type="button" class="danger" id="acct-signout">${ICON.out}Sign out</button>` : ''
     ].join('');
   }
@@ -3194,6 +3447,7 @@ async function addSource(name, url, domain) {
   Brief.markJustAdded(id);
   Persist.save();
   UI.renderAll();
+  buzz();
   if (fromForm) {
     input.value = '';
     setAddHint(`Added ${name}. It's at the bottom of your list.`);
@@ -3218,6 +3472,7 @@ async function removeSource(id) {
   Brief.forget(id);
   Persist.save();
   UI.renderAll();
+  buzz();
   UI.toast(`Removed ${s.name}.`);
   await Sync.pushAfterChange();
   return true;
@@ -3232,6 +3487,7 @@ async function renameSource(id, name) {
 
 async function setSourceHidden(id, hidden) {
   if (!State.setHidden(id, hidden)) return;
+  buzz(6);
   Persist.save();
   UI.renderAll();
   await Sync.pushAfterChange();
@@ -3289,10 +3545,21 @@ window.MB.sources = {
 async function refreshAll() {
   const btns = [$('refresh-btn'), $('refresh-btn-wide')].filter(Boolean);
   btns.forEach(b => b.classList.add('spinning'));
+  const before = Today.newCount();
   try {
     await Feeds.refetchAll();
   } finally {
     btns.forEach(b => b.classList.remove('spinning'));
+  }
+  // Close the loop: say what the check found
+  if (!State.getSources().some(s => !s.hidden) || Feeds.failedCount() === State.getSources().filter(s => !s.hidden).length) return;
+  const found = Today.newCount() - before;
+  if (found > 0) {
+    UI.toast(`${plural(found, 'new story', 'new stories')}`, {
+      actionText: 'Show', action: () => { Router.navigate('#/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    });
+  } else {
+    UI.toast("You're up to date.", { duration: 1800 });
   }
 }
 
@@ -3522,7 +3789,17 @@ function setupEventDelegation() {
     if (t.closest('[data-retry-all]')) { await refreshAll(); return; }
     if (t.closest('#refresh-btn') || t.closest('#refresh-btn-wide')) { await refreshAll(); return; }
 
+    // End-of-brief cards
+    const mGo = t.closest('[data-moment-go]');
+    if (mGo) { Moments.go(mGo.dataset.momentGo); return; }
+    const mClose = t.closest('[data-moment-close]');
+    if (mClose) { Moments.retire(mClose.dataset.momentClose); return; }
+    // Tap the sun
+    const sun = t.closest('.hero-sun');
+    if (sun) { Today.hop(sun); return; }
+
     // Account
+    if (t.closest('#acct-share')) { Account.close(); await shareApp(); return; }
     if (t.closest('#account-btn') || t.closest('[data-open-account]')) { Account.open(); return; }
     if (t.closest('#acct-send')) { await Account.sendLink(); return; }
     if (t.closest('#acct-reset')) { Account.reset(); return; }
@@ -3601,6 +3878,7 @@ function setupPullToRefresh() {
   const indicator = document.getElementById('ptr-indicator');
   const label = document.getElementById('ptr-label');
   if (!indicator) return;
+  const spinner = indicator.querySelector('.ptr-spinner');
 
   let startY = 0;
   let startX = 0;
@@ -3644,8 +3922,11 @@ function setupPullToRefresh() {
     const damped = Math.min(dy * 0.5, 80);
     indicator.style.transform = `translateX(-50%) translateY(${damped - 50}px)`;
     indicator.classList.add('visible');
-    if (dy > THRESHOLD) label.textContent = 'Release to check for new stories';
-    else label.textContent = 'Pull to check for new stories';
+    if (spinner) spinner.style.transform = `rotate(${Math.round(dy * 2.4)}deg)`;
+    if (dy > THRESHOLD) {
+      if (label.textContent !== 'Release to check for new stories') buzz(5);
+      label.textContent = 'Release to check for new stories';
+    } else label.textContent = 'Pull to check for new stories';
   }, { passive: true });
 
   window.addEventListener('touchend', async () => {
@@ -3655,6 +3936,7 @@ function setupPullToRefresh() {
       indicator.classList.add('active');
       label.textContent = 'Checking for new stories…';
       indicator.style.transform = 'translateX(-50%) translateY(10px)';
+      if (spinner) spinner.style.transform = '';
       try {
         await refreshAll();
       } finally {
@@ -3665,6 +3947,7 @@ function setupPullToRefresh() {
     } else {
       indicator.classList.remove('visible');
       indicator.style.transform = '';
+      if (spinner) spinner.style.transform = '';
     }
     pulledDistance = 0;
   });

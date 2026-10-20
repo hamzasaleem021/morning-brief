@@ -16,6 +16,7 @@
   let topic = null;          // null = All topics
   let showAllTopics = false;
   let searchTimer = null;
+  let justAdded = '';        // the row just added pops once
 
   // ── Catalog loader with cache fallback ────────────────────────────
   async function loadCatalog() {
@@ -115,7 +116,7 @@
       btn = `<button type="button" class="d-add" data-add-url="${esc(src.url)}" data-add-name="${esc(src.name)}" data-add-domain="${esc(src.domain || '')}" aria-label="Add ${esc(src.name)}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add</button>`;
     }
     return `
-      <div class="d-row">
+      <div class="d-row${justAdded && src.url === justAdded ? ' just' : ''}">
         ${pebFor(src)}
         <div class="txt"><span class="name">${esc(src.name)}</span><span class="dom">${esc(src.domain || '')}</span></div>
         ${btn}
@@ -340,8 +341,12 @@
         addBtn.disabled = true;
         addBtn.textContent = 'Adding…';
         const result = await window.addSource(name, addBtn.dataset.addUrl, addBtn.dataset.addDomain);
-        if (result && result.ok) UI.toast(`${name} added to your brief.`);
+        if (result && result.ok) {
+          justAdded = addBtn.dataset.addUrl;
+          UI.toast(`${name} added to your brief.`);
+        }
         renderContent();
+        justAdded = '';
         // Focus lands back on the row's button (now "Added")
         const rows = Array.from(document.querySelectorAll('#discover-content .d-row'));
         const row = rows.find(r => r.querySelector('.name')?.textContent === name);

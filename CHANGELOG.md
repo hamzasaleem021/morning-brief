@@ -1,5 +1,71 @@
 # Changelog
 
+## v32 — Small moments
+
+### Added
+- **A card at the end of a brief, when it's earned.** Only at the end of a
+  brief or on the nothing-new screen, never while you read. At most one per
+  brief, each shows in at most two briefs, and any answer retires it:
+  - from the second brief: three small tips (switching a source off, pasting
+    a website, sharing a passage to Clippings)
+  - from the third brief, with 3+ sources and signed out: keep your list safe
+    by signing in
+  - after five briefs and eight opened stories: share Morning Brief
+  The counts stay on the device (`morning_brief_moments`).
+- **Sign-offs** under the end of the brief that fit the time of day. The first
+  brief gets its own: "That was your first brief. Same time tomorrow?"
+- **Share Morning Brief** in the account menu, and a line about Open Loops in
+  the account sheet's footer.
+- **Share passage** in a clipping's menu: the quote, where it's from, a link
+  back to the passage, and "Kept with Morning Brief".
+- **Checking for new stories says what it found**: "3 new stories" with Show,
+  or "You're up to date."
+- Landing page: "Free. No account needed to start." under the buttons.
+- Privacy page lists the new on-device counts.
+
+### Changed
+- **Clippings are easier to read.** Passages are set upright instead of in
+  italics, at a reading size (19px, 20px on wide screens) with more line
+  height, and marked by a bar in their source's color, the same color as the
+  source's pebble. Paragraph breaks inside a passage are kept. The same
+  treatment in the desktop sidebar, the clipping's menu and the save screen.
+  The article title under a passage is a step stronger.
+
+### Micro-interactions
+- Buttons, tabs, chips and rows respond to a press. The switch knob slides.
+- Each screen settles in. Stories revealed by "more" or an opened fold slide
+  in one after another. The opened check pops in. The section you jump to
+  flashes once. The new-story count settles when it changes. The sun at the
+  end rises as you reach it, and the sun at the top hops when tapped.
+- A source added in Discover pops in.
+- A light tap on phones that support it: adding, removing, switching off and
+  reordering sources, saving a clipping, and passing the pull-to-refresh
+  threshold. The pull-to-refresh spinner turns as you pull.
+- All motion respects Reduce Motion.
+
+### Files modified
+
+| File | Changes |
+|---|---|
+| `morning-brief.html` | Moments, sign-offs, share, refresh result, motion, taps |
+| `clippings.js` | Share passage, save tap and message, passages with a source-colored bar |
+| `discovery.js` | Just-added row pops |
+| `index.html` | "Free. No account needed to start." |
+| `privacy.html` | On-device counts listed |
+| `README.md` | Moments design note |
+| `sw.js` | Cache bump v31 → v32 |
+
+## v31 — Plain words
+
+### Changed
+- Every message people see is in plain words. No database codes, no "cloud",
+  no "OPML" on buttons ("Import a list", "Export your list"), and sync status
+  reads "Couldn't sync. Tap Retry".
+- The Row Level Security self-check logs to the console for whoever runs the
+  app instead of showing a banner to readers.
+- Privacy page: no code or table names.
+- `sw.js`: cache bump v30 → v31.
+
 ## v30 — Powered by auxila.cc
 
 ### Added
