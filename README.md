@@ -209,6 +209,7 @@ On iOS, a separate "Add to Home Screen" hint with Share-icon instructions appear
 - **One-file philosophy preserved.** CSS and JS stay inline in `morning-brief.html`. The single-file approach is part of the product — simple to deploy, easy to audit, easy to fork.
 - **Color means a source.** Seven source colors (teal, ochre, pink, lavender, peach, moss, cobalt) are the only color in the app. A new source gets the least-used color that differs from its neighbour's. Night variants live in CSS.
 - **"New" is per device.** New means first seen since this brief began; a brief continues while the app was open in the last 30 minutes. It's kept in localStorage (`morning_brief_brief`, `morning_brief_seen`, `morning_brief_opened`) and never synced. Opened stories grey out instead of counting down.
+- **Moments are earned, and rare.** The end of a brief (or the nothing-new screen) can carry one small card: tips from the second brief, a sign-in suggestion from the third (3+ sources, signed out), a share suggestion after five briefs and eight opened stories. One card per brief, at most two showings each, and any answer retires it. Never mid-read, nothing ranked. The counts live in localStorage (`morning_brief_moments`) and never sync.
 - **20-source limit is a feature.** A focused feed is the whole idea. Raising this would turn Morning Brief into a feed aggregator.
 - **No Amplitude by default.** The `AMPLITUDE_KEY` in `config.js` ships as `null`. Setting it to a real key enables tracking — if you do, update `privacy.html` and the welcome copy to disclose it.
 

@@ -1001,6 +1001,7 @@
       <p class="lede clip-lede">“${esc(c.text.length > 160 ? c.text.slice(0, 160).trim() + '…' : c.text)}”</p>
       <div class="menu-list" style="margin-top: 12px">
         <button type="button" data-m="note">${c.note ? 'Edit note' : 'Add a note'}</button>
+        <button type="button" data-m="share">Share passage</button>
         <button type="button" data-m="copy">Copy passage</button>
         ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open passage ${ICON.ext}</a>` : ''}
         <button type="button" class="danger" data-m="delete">Delete clipping</button>
@@ -1012,6 +1013,18 @@
       const what = b.dataset.m;
       s.close();
       if (what === 'note') setTimeout(() => promptEditNote(id), 60);
+      else if (what === 'share') {
+        // Shared passages carry a small, honest line about where they were kept
+        const link = buildScrollUrl(c);
+        const from = [c.sourceName, c.articleTitle].filter(Boolean).join(', ');
+        const text = `“${c.text}”${from ? `\n— ${from}` : ''}${link ? `\n${link}` : ''}\n\nKept with Morning Brief · morningbrief.auxila.cc`;
+        if (navigator.share) {
+          try { await navigator.share({ text }); return; }
+          catch (err) { if (err && err.name === 'AbortError') return; }
+        }
+        try { await navigator.clipboard.writeText(text); toast('Copied, ready to paste and share.'); }
+        catch { toast("Couldn't share. Select the text and copy it instead."); }
+      }
       else if (what === 'copy') {
         try { await navigator.clipboard.writeText(c.text); toast('Passage copied.'); }
         catch { toast("Couldn't copy. Select the text and copy it instead."); }
@@ -1127,13 +1140,14 @@
       return;
     }
     shareState = null;
+    if (typeof window.buzz === 'function') window.buzz([8, 40, 12]);
     const returnUrl = mode === 'return' ? buildScrollUrl(saved) : '';
     if (returnUrl) {
       toast('Saved. Going back to the article…', { duration: 1600 });
       setTimeout(() => { window.location.href = returnUrl; }, 350);
     } else {
       if (window.MB && window.MB.navigate) window.MB.navigate('#/clippings', { replace: true });
-      toast('Clipping saved.', { duration: 2000 });
+      toast('Kept. It’s in your Clippings whenever you want it.', { duration: 2600 });
     }
   }
 
