@@ -1,15 +1,18 @@
 # Morning Brief
 
-> Your sources. Your signal. Every morning.
+> The writers and publications you choose, in your order. Nothing ranked.
 
-A focused RSS reader that holds up to 20 feeds and presents them as a daily personal brief. No algorithm. No ads. No reading history. Just the publications you've chosen, fetched fresh, in the order you want.
+A focused RSS reader that holds up to 20 feeds and presents them as a daily personal brief. It shows what's new since you last looked, in the order you set, and every brief has an end. No algorithm. No ads. No reading history leaves your device. Every story opens on the publisher's own site.
 
 ## What it is
 
 - A PWA (Progressive Web App) — install to your home screen, works offline after first load
 - Single-file app: `morning-brief.html` contains the full UI and logic
-- Up to 20 RSS sources; each gets its own section with the 5 latest posts
-- Dark mode, drag-reorder, scroll-spy nav, pull-to-refresh
+- Up to 20 sources; paste a feed or any web page and the feed is found for you
+- Today shows what's new since you last opened the app, per source, in your order; earlier stories are one tap away
+- The Daylight design: cream by day, teal-black at night, and color only where it marks a source
+- Hide a source without removing it, rename it, drag or arrow-key reorder, pull-to-refresh
+- Clippings: share a passage from any article to Morning Brief and reopen it at that exact spot
 - Optional magic-link sync across devices via Supabase
 - OPML import/export — bring your feeds from any reader, take them with you any time
 - No tracking, no analytics, no ads (see `privacy.html`)
@@ -22,7 +25,8 @@ config.js                — All tunable constants; fork-friendly
 sw.js                    — Service worker (offline + update prompt)
 discovery.js             — Source catalog browser ("Discover")
 discovery-sources.json   — 1,250 curated RSS feeds across 67 categories
-opml.js                  — OPML import/export (Manage Sources modal)
+opml.js                  — OPML import/export (Sources screen)
+clippings.js             — Clippings: share-target intake, list, sync
 privacy.html             — Privacy policy (shares the app's stylesheet)
 manifest.json            — PWA manifest
 icon-192.png, icon-512.png — App icons
@@ -192,7 +196,8 @@ On iOS, a separate "Add to Home Screen" hint with Share-icon instructions appear
 ## Key design decisions
 
 - **One-file philosophy preserved.** CSS and JS stay inline in `morning-brief.html`. The single-file approach is part of the product — simple to deploy, easy to audit, easy to fork.
-- **Source colors are generated, not picked from a palette.** An HSL wheel rotating from the accent color (`#c8502a`) produces 20 unique, harmonious colors that sit comfortably on the ivory background and adapt to dark mode.
+- **Color means a source.** Seven source colors (teal, ochre, pink, lavender, peach, moss, cobalt) are the only color in the app. A new source gets the least-used color that differs from its neighbour's. Night variants live in CSS.
+- **"New" is per device.** New means first seen since this brief began; a brief continues while the app was open in the last 30 minutes. It's kept in localStorage (`morning_brief_brief`, `morning_brief_seen`, `morning_brief_opened`) and never synced. Opened stories grey out instead of counting down.
 - **20-source limit is a feature.** A focused feed is the whole idea. Raising this would turn Morning Brief into a feed aggregator.
 - **No Amplitude by default.** The `AMPLITUDE_KEY` in `config.js` ships as `null`. Setting it to a real key enables tracking — if you do, update `privacy.html` and the welcome copy to disclose it.
 
