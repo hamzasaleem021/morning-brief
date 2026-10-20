@@ -806,6 +806,12 @@
     return neutralPeb(c.sourceName || c.sourceDomain, size);
   }
 
+  // The source's color class, for the bar beside a passage
+  function toneOf(c) {
+    const src = sourceFor(c);
+    return src && typeof State.colorFor === 'function' ? ` tone c${State.colorFor(src)}` : '';
+  }
+
   function isStandalone() {
     return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   }
@@ -918,7 +924,7 @@
           <span class="when tnum">${esc(whenLabel(saved))}</span>
           <button type="button" class="icon-btn" id="clp-m-${esc(c.id)}" data-clp-menu="${esc(c.id)}" aria-label="More for this clipping">${ICON.more}</button>
         </div>
-        <blockquote>${esc(c.text)}</blockquote>
+        <blockquote class="quote${toneOf(c)}">${esc(c.text)}</blockquote>
         ${c.note ? `<div class="clip-note"><span class="k">Your note</span><span class="v">${esc(c.note)}</span></div>` : ''}
         ${url ? `
           <a class="clip-foot" href="${esc(url)}" target="_blank" rel="noopener noreferrer">
@@ -998,7 +1004,7 @@
     if (!c) return;
     const url = buildScrollUrl(c);
     const s = sheet(`
-      <p class="lede clip-lede">“${esc(c.text.length > 160 ? c.text.slice(0, 160).trim() + '…' : c.text)}”</p>
+      <p class="clip-lede quote${toneOf(c)}">${esc(c.text.length > 160 ? c.text.slice(0, 160).trim() + '…' : c.text)}</p>
       <div class="menu-list" style="margin-top: 12px">
         <button type="button" data-m="note">${c.note ? 'Edit note' : 'Add a note'}</button>
         <button type="button" data-m="share">Share passage</button>

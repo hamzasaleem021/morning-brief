@@ -23,6 +23,14 @@
 - Landing page: "Free. No account needed to start." under the buttons.
 - Privacy page lists the new on-device counts.
 
+### Changed
+- **Clippings are easier to read.** Passages are set upright instead of in
+  italics, at a reading size (19px, 20px on wide screens) with more line
+  height, and marked by a bar in their source's color, the same color as the
+  source's pebble. Paragraph breaks inside a passage are kept. The same
+  treatment in the desktop sidebar, the clipping's menu and the save screen.
+  The article title under a passage is a step stronger.
+
 ### Micro-interactions
 - Buttons, tabs, chips and rows respond to a press. The switch knob slides.
 - Each screen settles in. Stories revealed by "more" or an opened fold slide
@@ -40,7 +48,7 @@
 | File | Changes |
 |---|---|
 | `morning-brief.html` | Moments, sign-offs, share, refresh result, motion, taps |
-| `clippings.js` | Share passage, save tap and message |
+| `clippings.js` | Share passage, save tap and message, passages with a source-colored bar |
 | `discovery.js` | Just-added row pops |
 | `index.html` | "Free. No account needed to start." |
 | `privacy.html` | On-device counts listed |
