@@ -131,11 +131,12 @@
     return parts.join(': ').slice(0, 220);
   }
 
+  // The technical reason goes to the console; people get plain words.
   function toastCloudError(e) {
-    const detail = describeDbError(e);
-    toast(detail
-      ? `Couldn't save clipping: ${detail}`
-      : "Couldn't save clipping to the cloud. Check your sign-in and Supabase setup.");
+    console.warn('[Clippings] save failed:', describeDbError(e) || e);
+    toast(navigator.onLine
+      ? "Couldn't save this clipping. Try again in a minute."
+      : "Couldn't save this clipping. Check your internet connection and try again.");
   }
 
   function looksLikeUuid(value) {
@@ -290,7 +291,7 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(clippings));
     } catch (e) {
       console.warn('[Clippings] persist failed:', e);
-      toast("Couldn't save clipping locally — storage may be full.");
+      toast("This device is out of space, so the clipping wasn't kept here.");
     }
   }
 
@@ -551,7 +552,7 @@
 
   async function saveClipping({ text, note, articleUrl, articleTitle, source }) {
     text = String(text || '').trim();
-    if (!text) { toast('Empty selection — nothing to save.'); return null; }
+    if (!text) { toast('There\'s no text to save.'); return null; }
     if (text.length > MAX_TEXT) text = text.slice(0, MAX_TEXT);
 
     let host = '';
@@ -640,7 +641,7 @@
     const c = findById(id);
     if (!c) return;
     const url = buildScrollUrl(c);
-    if (!url) { toast("That clipping has no article URL."); return; }
+    if (!url) { toast("This clipping doesn't have a link to its article."); return; }
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
