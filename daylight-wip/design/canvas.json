@@ -1,0 +1,142 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "CaughtUp.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Nothing new yet",
+      "w": 390,
+      "x": 2350,
+      "y": 0
+    },
+    "Clippings.dc.html": {
+      "h": 1380,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Clippings",
+      "w": 390,
+      "x": 940,
+      "y": 0
+    },
+    "Desktop.dc.html": {
+      "expand": "fill",
+      "h": 1840,
+      "is_interactive": true,
+      "title": "Desktop · Today",
+      "w": 1440,
+      "x": 0,
+      "y": 4340
+    },
+    "Discover.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Discover",
+      "w": 390,
+      "x": 1880,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 2140,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Today · front page",
+      "w": 390,
+      "x": 0,
+      "y": 0
+    },
+    "Night.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Night · two stories opened",
+      "w": 390,
+      "x": 470,
+      "y": 2480
+    },
+    "ShareClip.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Clip from Share",
+      "w": 390,
+      "x": 470,
+      "y": 0
+    },
+    "Sources.dc.html": {
+      "h": 1520,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Sources",
+      "w": 390,
+      "x": 1410,
+      "y": 0
+    },
+    "System.dc.html": {
+      "h": 1480,
+      "title": "Daylight system",
+      "w": 1400,
+      "x": 940,
+      "y": 2480
+    },
+    "Welcome.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "First run",
+      "w": 390,
+      "x": 0,
+      "y": 2480
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-20T19:50:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "t1": {
+      "kind": "title1",
+      "maxW": 2740,
+      "text": "Morning Brief · Daylight",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "t2": {
+      "kind": "title1",
+      "maxW": 2340,
+      "text": "First run, night, and the system",
+      "w": 240,
+      "x": 0,
+      "y": 2180
+    },
+    "t3": {
+      "kind": "title1",
+      "maxW": 1440,
+      "text": "Desktop",
+      "w": 240,
+      "x": 0,
+      "y": 4040
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "ShareClip.dc.html",
+    "Clippings.dc.html",
+    "Sources.dc.html",
+    "Discover.dc.html",
+    "CaughtUp.dc.html",
+    "Welcome.dc.html",
+    "Night.dc.html",
+    "System.dc.html",
+    "Desktop.dc.html"
+  ],
+  "pages": [],
+  "title": "Morning Brief Daylight"
+}

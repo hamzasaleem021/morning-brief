@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Daylight system</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.mb{--bg:#fffaf0;--surface:#fffdf8;--surface-2:#faf5e8;--surface-3:#f5f0e0;--strong:#ebe6d6;--border:#e8e2d2;--border-soft:#f0ebdd;--text:#0a0a0a;--text-2:#3a3a3a;--text-3:#6f6a5f;--ink-on-text:#fffaf0;--teal:#1a3a3a;--teal-ink:#fffaf0;--ochre:#e8b94a;--ochre-ink:#0a0a0a;--pink:#ff4d8b;--lav:#b8a4ed;--peach:#ffb084;--moss:#a9c97f;--cobalt:#3b5bdb;--ok:#22a05a;font-family:Inter,ui-sans-serif,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
+.mb.night{--bg:#0a1a1a;--surface:#11221f;--surface-2:#1a2a2a;--surface-3:#22342f;--strong:#2b3d39;--border:rgba(255,250,240,.10);--border-soft:rgba(255,250,240,.06);--text:#fffaf0;--text-2:rgba(255,250,240,.76);--text-3:rgba(255,250,240,.58);--ink-on-text:#0a1a1a;--teal:#a4d4c5;--teal-ink:#0a1a1a;--cobalt:#8ea2f2}
+.mb *{box-sizing:border-box}
+.mb button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+.mb .serif{font-family:Newsreader,'Iowan Old Style','Palatino Linotype',Georgia,serif;font-optical-sizing:auto}
+.mb .eyebrow{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3)}
+.mb .tnum{font-variant-numeric:tabular-nums}
+.mb .peb{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;box-shadow:inset 0 -2px 0 rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.35)}
+.mb .mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12px}
+.mb h2{margin:0;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3)}
+a{color:#0a0a0a}a:hover{color:#3a3a3a}
+</style>
+</helmet>
+<div class="mb {{theme}}" style="width: 1400px; height: 1480px; box-sizing: border-box; padding: 64px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; gap: 44px">
+
+<header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 760px">
+<span class="eyebrow">Morning Brief · design system</span>
+<h1 class="serif" style="margin: 0; font-size: 96px; line-height: 0.95; font-weight: 500; letter-spacing: -0.035em">Daylight</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; color: var(--text-2); max-width: 640px">The Clay family that Open Loops started, tuned for reading. Cream by day, teal-black at night. Color only marks where a story came from.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end; font-size: 14px; color: var(--text-3)">
+<span>Shared with Open Loops: canvas, ink, night, radii, Inter</span>
+<span>New here: Newsreader, source colors, the sun</span>
+</div>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px">
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2>Ground and ink</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="border-radius: 16px; overflow: hidden; border: 1px solid var(--border)">
+<div style="padding: 12px 14px; background: #fffaf0; color: #0a0a0a; font-size: 13px; font-weight: 600">Day</div>
+<div style="height: 40px; background: #fffaf0; border-top: 1px solid #e8e2d2; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #0a0a0a"><span style="font-size: 13px">Canvas</span><span class="mono">#fffaf0</span></div>
+<div style="height: 40px; background: #fffdf8; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #0a0a0a"><span style="font-size: 13px">Card</span><span class="mono">#fffdf8</span></div>
+<div style="height: 40px; background: #f5f0e0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #0a0a0a"><span style="font-size: 13px">Pill</span><span class="mono">#f5f0e0</span></div>
+<div style="height: 40px; background: #0a0a0a; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #fffaf0"><span style="font-size: 13px">Ink</span><span class="mono">#0a0a0a</span></div>
+<div style="height: 40px; background: #6f6a5f; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #fffaf0"><span style="font-size: 13px">Caption</span><span class="mono">#6f6a5f</span></div>
+</div>
+<div style="border-radius: 16px; overflow: hidden; border: 1px solid var(--border)">
+<div style="padding: 12px 14px; background: #0a1a1a; color: #fffaf0; font-size: 13px; font-weight: 600">Night</div>
+<div style="height: 40px; background: #0a1a1a; border-top: 1px solid rgba(255,250,240,.1); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #fffaf0"><span style="font-size: 13px">Canvas</span><span class="mono">#0a1a1a</span></div>
+<div style="height: 40px; background: #11221f; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #fffaf0"><span style="font-size: 13px">Card</span><span class="mono">#11221f</span></div>
+<div style="height: 40px; background: #22342f; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #fffaf0"><span style="font-size: 13px">Pill</span><span class="mono">#22342f</span></div>
+<div style="height: 40px; background: #fffaf0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #0a1a1a"><span style="font-size: 13px">Ink</span><span class="mono">#fffaf0</span></div>
+<div style="height: 40px; background: #939792; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #0a1a1a"><span style="font-size: 13px">Caption</span><span class="mono">58%</span></div>
+</div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2)">Caption grey moves from #8a857a to #6f6a5f, so 13px labels clear 4.5:1 on the canvas. At night it rises from 42% to 58% cream for the same reason.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2>Source colors</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 12px">
+<sc-for list="{{swatches}}" as="s" hint-placeholder-count="7">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="peb" style="width: 64px; height: 64px; border-radius: 20px; font-size: 22px; background: {{s.fill}}; color: {{s.ink}}">{{s.letter}}</span>
+<div style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">{{s.name}}</span><span class="mono" style="color: var(--text-3)">{{s.hex}}</span></div>
+</div>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2)">The only color in the app. A source gets its color when you add it, unused colors first, so neighbours never match. Teal and cobalt carry cream letters; the light fills carry ink. Sources you haven't added stay neutral.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2>Type</h2>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span class="serif" style="font-size: 52px; line-height: 1; font-weight: 500; letter-spacing: -0.025em">23 new stories</span>
+<span class="mono" style="color: var(--text-3)">Newsreader 500 · display 42–72</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span class="serif" style="font-size: 22px; line-height: 1.2; font-weight: 500; letter-spacing: -0.015em">What happens when every app grows a chat box</span>
+<span class="mono" style="color: var(--text-3)">Newsreader 500 · a source's newest story 22</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span class="serif" style="font-size: 18px; line-height: 1.3; font-weight: 500">A field guide to your first 50 customer calls</span>
+<span class="mono" style="color: var(--text-3)">Newsreader 500 · other headlines 18</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span class="serif" style="font-size: 22px; line-height: 1.35; font-style: italic">Your first price is a question you ask the market.</span>
+<span class="mono" style="color: var(--text-3)">Newsreader italic · clippings 22</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border)">
+<span style="font-size: 15px; font-weight: 600">Lenny's Newsletter <span style="font-weight: 400; color: var(--text-3)">· 8 min · 3 hours ago</span></span>
+<span class="mono" style="color: var(--text-3)">Inter 400–600 · interface 12–17</span>
+</div>
+</section>
+
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px">
+
+<section style="grid-column: span 2; display: flex; flex-direction: column; gap: 16px">
+<h2>The sun</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+
+<figure style="margin: 0; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+<svg width="100%" height="120" viewBox="30 56 240 120" role="img" aria-label="Sleepy sun below the horizon"><defs><filter id="sy1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"></feGaussianBlur><feDiffuseLighting in="b" surfaceScale="5" diffuseConstant="1.05" lighting-color="#fff" result="d"><feDistantLight azimuth="235" elevation="48"></feDistantLight></feDiffuseLighting><feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1.05" result="lit"></feComposite><feSpecularLighting in="b" surfaceScale="5" specularConstant="0.55" specularExponent="16" lighting-color="#fff" result="s"><feDistantLight azimuth="235" elevation="55"></feDistantLight></feSpecularLighting><feComposite in="s" in2="SourceAlpha" operator="in" result="s2"></feComposite><feComposite in="lit" in2="s2" operator="arithmetic" k2="1" k3="0.6" result="o"></feComposite><feComposite in="o" in2="SourceAlpha" operator="in"></feComposite></filter><clipPath id="sy1h"><rect x="0" y="0" width="300" height="160"></rect></clipPath></defs><text x="210" y="106" style="fill: var(--text-3); font-family: Inter, sans-serif; font-size: 26px; font-weight: 700">z</text><text x="232" y="82" style="fill: var(--text-3); font-family: Inter, sans-serif; font-size: 18px; font-weight: 700">z</text><g clip-path="url(#sy1h)"><g filter="url(#sy1)"><circle cx="150" cy="184" r="66" style="fill: #f0b443"></circle></g><path d="M130 140Q137 146 144 140" style="fill: none; stroke: #0a0a0a; stroke-width: 4; stroke-linecap: round"></path><path d="M156 140Q163 146 170 140" style="fill: none; stroke: #0a0a0a; stroke-width: 4; stroke-linecap: round"></path><path d="M145 152Q150 155 155 152" style="fill: none; stroke: #0a0a0a; stroke-width: 3; stroke-linecap: round"></path></g><g filter="url(#sy1)"><path d="M46 160H254" style="fill: none; stroke: var(--teal); stroke-width: 14; stroke-linecap: round"></path></g></svg>
+<figcaption style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 600">Asleep</span><span style="font-size: 14px; line-height: 1.45; color: var(--text-2)">First run, before you've added a source.</span></figcaption>
+</figure>
+
+<figure style="margin: 0; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+<svg width="100%" height="120" viewBox="30 34 240 140" role="img" aria-label="Awake sun rising over the horizon"><defs><filter id="sy2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"></feGaussianBlur><feDiffuseLighting in="b" surfaceScale="5" diffuseConstant="1.05" lighting-color="#fff" result="d"><feDistantLight azimuth="235" elevation="48"></feDistantLight></feDiffuseLighting><feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1.05" result="lit"></feComposite><feSpecularLighting in="b" surfaceScale="5" specularConstant="0.55" specularExponent="16" lighting-color="#fff" result="s"><feDistantLight azimuth="235" elevation="55"></feDistantLight></feSpecularLighting><feComposite in="s" in2="SourceAlpha" operator="in" result="s2"></feComposite><feComposite in="lit" in2="s2" operator="arithmetic" k2="1" k3="0.6" result="o"></feComposite><feComposite in="o" in2="SourceAlpha" operator="in"></feComposite></filter><clipPath id="sy2h"><rect x="0" y="0" width="300" height="160"></rect></clipPath></defs><g filter="url(#sy2)" style="fill: none; stroke: #ffb084; stroke-width: 14; stroke-linecap: round"><path d="M150 60V42"></path><path d="M195.9 74.5L206.2 59.7"></path><path d="M104.1 74.5L93.8 59.7"></path><path d="M225.2 112.6L242.1 106.5"></path><path d="M74.8 112.6L57.9 106.5"></path></g><circle cx="244" cy="72" r="8" style="fill: #ff4d8b"></circle><g clip-path="url(#sy2h)"><g filter="url(#sy2)"><circle cx="150" cy="140" r="66" style="fill: #f0b443"></circle></g><ellipse cx="134" cy="112" rx="6" ry="8" style="fill: #0a0a0a"></ellipse><ellipse cx="166" cy="112" rx="6" ry="8" style="fill: #0a0a0a"></ellipse><path d="M142 126Q150 133 158 126" style="fill: none; stroke: #0a0a0a; stroke-width: 3.5; stroke-linecap: round"></path></g><g filter="url(#sy2)"><path d="M46 160H254" style="fill: none; stroke: var(--teal); stroke-width: 14; stroke-linecap: round"></path></g></svg>
+<figcaption style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 600">Awake</span><span style="font-size: 14px; line-height: 1.45; color: var(--text-2)">The header mark and the top of Today.</span></figcaption>
+</figure>
+
+<figure style="margin: 0; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+<svg width="100%" height="120" viewBox="0 0 300 196" role="img" aria-label="Sun fully risen and smiling"><defs><filter id="sy3" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"></feGaussianBlur><feDiffuseLighting in="b" surfaceScale="5" diffuseConstant="1.05" lighting-color="#fff" result="d"><feDistantLight azimuth="235" elevation="48"></feDistantLight></feDiffuseLighting><feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1.05" result="lit"></feComposite><feSpecularLighting in="b" surfaceScale="5" specularConstant="0.55" specularExponent="16" lighting-color="#fff" result="s"><feDistantLight azimuth="235" elevation="55"></feDistantLight></feSpecularLighting><feComposite in="s" in2="SourceAlpha" operator="in" result="s2"></feComposite><feComposite in="lit" in2="s2" operator="arithmetic" k2="1" k3="0.6" result="o"></feComposite><feComposite in="o" in2="SourceAlpha" operator="in"></feComposite></filter></defs><path d="M258 28l4.8 7.2l7.2 4.8l-7.2 4.8l-4.8 7.2l-4.8-7.2l-7.2-4.8l7.2-4.8Z" style="fill: #b8a4ed"></path><path d="M44 51l3.6 5.4l5.4 3.6l-5.4 3.6l-3.6 5.4l-3.6-5.4l-5.4-3.6l5.4-3.6Z" style="fill: #ff4d8b"></path><g filter="url(#sy3)" style="fill: none; stroke: #ffb084; stroke-width: 14; stroke-linecap: round"><path d="M150 24V8"></path><path d="M200.9 45.1L212.2 33.8"></path><path d="M99.1 45.1L87.8 33.8"></path><path d="M222 96H238"></path><path d="M78 96H62"></path><path d="M200.9 146.9L212.2 158.2"></path><path d="M99.1 146.9L87.8 158.2"></path></g><g filter="url(#sy3)"><circle cx="150" cy="96" r="60" style="fill: #f0b443"></circle></g><circle cx="122" cy="108" r="7" style="fill: #ff4d8b; opacity: .5"></circle><circle cx="178" cy="108" r="7" style="fill: #ff4d8b; opacity: .5"></circle><path d="M128 92Q136 81 144 92" style="fill: none; stroke: #0a0a0a; stroke-width: 4.5; stroke-linecap: round"></path><path d="M156 92Q164 81 172 92" style="fill: none; stroke: #0a0a0a; stroke-width: 4.5; stroke-linecap: round"></path><path d="M138 106Q150 119 162 106" style="fill: none; stroke: #0a0a0a; stroke-width: 4; stroke-linecap: round"></path><g filter="url(#sy3)"><path d="M52 178H248" style="fill: none; stroke: var(--teal); stroke-width: 14; stroke-linecap: round"></path></g></svg>
+<figcaption style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 600">Risen</span><span style="font-size: 14px; line-height: 1.45; color: var(--text-2)">The bottom of Today, and the nothing-new screen.</span></figcaption>
+</figure>
+
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); max-width: 720px">Same clay lighting as the Open Loops mascot, and the pink dot carries over. Open Loops is an open ring; Morning Brief is a sun on a horizon. One closes, one rises.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2>Rules</h2>
+<div style="display: flex; flex-direction: column; border-top: 1px solid var(--border)">
+<div style="padding: 16px 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px"><span class="serif" style="font-size: 22px; font-weight: 500; letter-spacing: -0.01em">Color means a source</span><span style="font-size: 14px; line-height: 1.5; color: var(--text-2)">Only the source tags carry color. Headlines, cards and buttons stay cream and ink.</span></div>
+<div style="padding: 16px 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px"><span class="serif" style="font-size: 22px; font-weight: 500; letter-spacing: -0.01em">Your order decides</span><span style="font-size: 14px; line-height: 1.5; color: var(--text-2)">Nothing is ranked. Sections follow your source order, and each opens with that source's newest story.</span></div>
+<div style="padding: 16px 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px"><span class="serif" style="font-size: 22px; font-weight: 500; letter-spacing: -0.01em">Read on their site</span><span style="font-size: 14px; line-height: 1.5; color: var(--text-2)">Every story opens on the publisher's own page. Morning Brief is the front page, not the paper.</span></div>
+</div>
+</section>
+
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2>Components</h2>
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="height: 40px; padding: 0 14px 0 6px; border-radius: 9999px; background: var(--surface-3); display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><span class="peb" style="width: 28px; height: 28px; border-radius: 9px; font-size: 12px; background: var(--ochre); color: var(--ochre-ink)">L</span>Lenny's<span class="tnum" style="font-weight: 500; color: var(--text-3)">3</span></span>
+<span style="font-size: 13px; color: var(--text-3)">Jump to a source</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="width: 300px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<span class="serif" style="font-size: 18px; line-height: 1.3; font-weight: 500">A field guide to your first 50 customer calls</span>
+<span class="tnum" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-3)">12 min · 5 hours ago<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: auto"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg></span>
+</div>
+<span style="font-size: 13px; color: var(--text-3)">New story · opens on the source's site</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="width: 300px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<span class="serif" style="font-size: 18px; line-height: 1.3; font-weight: 500; color: var(--text-3)">What happens when every app grows a chat box</span>
+<span class="tnum" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Opened · 9 min · 1 hour ago<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: auto"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg></span>
+</div>
+<span style="font-size: 13px; color: var(--text-3)">Opened · greys out, stays in place</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<button type="button" style="height: 48px; padding: 0 22px; border-radius: 12px; background: var(--text); color: var(--ink-on-text); font-size: 15px; font-weight: 600">Save clipping</button>
+<button type="button" style="height: 48px; padding: 0 22px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); font-size: 15px; font-weight: 600">Cancel</button>
+<button type="button" aria-pressed="true" style="height: 40px; padding: 0 16px; border-radius: 9999px; background: var(--text); color: var(--ink-on-text); font-size: 14px; font-weight: 600">All 38</button>
+<button type="button" aria-pressed="false" style="height: 40px; padding: 0 16px; border-radius: 9999px; background: var(--surface-3); font-size: 14px; font-weight: 500">With notes 14</button>
+<span aria-hidden="true" style="width: 46px; height: 28px; border-radius: 9999px; background: var(--text); padding: 3px; display: flex; justify-content: flex-end"><span style="width: 22px; height: 22px; border-radius: 50%; background: var(--bg)"></span></span>
+</div>
+
+</div>
+</section>
+
+<p style="margin: 0; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-3)">Stories, passages and counts on this canvas are sample content. Sources and categories come from the real Morning Brief catalog.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;night&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;State&quot;},&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:1480}}">
+class Component extends DCLogic {
+  renderVals() {
+    const sw = [
+      ['Teal', '#1a3a3a', '#fffaf0', 'F'],
+      ['Ochre', '#e8b94a', '#0a0a0a', 'L'],
+      ['Pink', '#ff4d8b', '#0a0a0a', 'B'],
+      ['Lavender', '#b8a4ed', '#0a0a0a', 'L'],
+      ['Peach', '#ffb084', '#0a0a0a', 'C'],
+      ['Moss', '#a9c97f', '#0a0a0a', 'P'],
+      ['Cobalt', '#3b5bdb', '#fffaf0', 'S']
+    ];
+    return {
+      theme: (this.props.night ?? false) ? 'night' : '',
+      swatches: sw.map(([name, hex, ink, letter]) => ({ name, hex, letter, fill: hex, ink }))
+    };
+  }
+}
+</script>
+</body>
+</html>
