@@ -635,8 +635,6 @@
   .ptr-spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--strong); border-top-color: var(--text); }
   .ptr-indicator.active .ptr-spinner { animation: mbSpin .8s linear infinite; }
 
-  .rls-banner { position: relative; z-index: 400; margin: 0; border-radius: 0; background: var(--bad); color: #fff; display: flex; flex-direction: column; align-items: flex-start; }
-  .rls-banner strong { color: #fff; }
 
   /* ── Sun motion ───────────────────────────────────────────────────── */
   @media (prefers-reduced-motion: no-preference) {
@@ -787,7 +785,7 @@
   <!-- ── Today ──────────────────────────────────────────────────────── -->
   <div class="view" id="view-today" data-view="today">
     <div class="banner" id="sync-save-banner" role="alert">
-      <div><strong>Not saved to the cloud.</strong> Your changes are on this device. We'll retry when you're back online.</div>
+      <div><strong>Not saved to your account yet.</strong> Your changes are safe on this device. We'll try again when you're back online.</div>
       <button type="button" class="btn small quiet" id="sync-save-retry">Retry now</button>
     </div>
     <div id="today-root"></div>
@@ -841,16 +839,16 @@
         <div class="move-panel">
           <div class="stack" style="gap: 4px">
             <span class="t">Moving from another reader?</span>
-            <span class="d">Bring your list from Feedly, Inoreader or NetNewsWire, or take it with you.</span>
+            <span class="d">Bring your list from Feedly, Inoreader or NetNewsWire, or take it with you. Any reader's export file (OPML) works.</span>
           </div>
           <div class="row">
             <button type="button" class="btn small" id="opml-import-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>
-              Import OPML
+              Import a list
             </button>
             <button type="button" class="btn small" id="opml-export-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
-              Export OPML
+              Export your list
             </button>
           </div>
         </div>
@@ -1307,7 +1305,7 @@ const Persist = {
         e.code === 22 || e.code === 1014
       );
       if (isQuota && window.UI && typeof UI.toast === 'function') {
-        UI.toast("Can't save locally — try signing in to keep your sources in the cloud.");
+        UI.toast("This device is out of space. Sign in so your sources are kept in your account.");
       }
     }
   },
@@ -1372,7 +1370,7 @@ const Sync = (() => {
           await pushNow();
         } else {
           console.error('Pull RPC error:', error);
-          UI.setSyncStatus('error', 'Sync failed — tap to retry');
+          UI.setSyncStatus('error', 'Couldn\'t sync. Tap Retry');
         }
         return;
       }
@@ -1400,11 +1398,11 @@ const Sync = (() => {
         await pushNow();
       } else {
         console.warn('Pull: ambiguous response', data);
-        UI.setSyncStatus('error', 'Sync unclear — tap to retry');
+        UI.setSyncStatus('error', 'Couldn\'t sync. Tap Retry');
       }
     } catch(e) {
       console.error('Pull failed:', e);
-      UI.setSyncStatus('error', 'Sync failed — tap to retry');
+      UI.setSyncStatus('error', 'Couldn\'t sync. Tap Retry');
     } finally {
       isBusy = false;
       if (pendingConfig) {
@@ -1439,7 +1437,7 @@ const Sync = (() => {
     } catch(e) {
       console.error('Push failed:', e);
       hasPendingChanges = true;
-      UI.setSyncStatus('error', 'Not saved — tap to retry');
+      UI.setSyncStatus('error', 'Not saved yet. Tap Retry');
       UI.showSyncSaveBanner();
       scheduleRetry();
       return { ok: false, error: e };
@@ -2941,7 +2939,7 @@ const Account = (() => {
             <span class="avatar" aria-hidden="true">${esc(email.charAt(0).toUpperCase())}</span>
             <div class="who"><span class="em">${esc(email)}</span><span class="st" id="acct-status"><i class="${dot}"></i>${esc(UI.syncLabel())}</span></div>
           </div>
-          ${st === 'error' ? `<button type="button" class="btn small quiet" id="acct-retry">Retry now</button>` : ''}
+          ${st === 'error' ? `<button type="button" class="btn small quiet" id="acct-retry">Retry</button>` : ''}
         </div>`;
     }
     if (sentTo) {
@@ -3301,7 +3299,7 @@ async function refreshAll() {
 async function retrySync() {
   UI.setSyncStatus('syncing', 'Retrying…');
   const r = await Sync.retryPush();
-  if (r.ok) UI.toast('Changes saved to the cloud.');
+  if (r.ok) UI.toast('Changes saved.');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -3794,16 +3792,8 @@ async function rlsSelfCheck() {
     if (error) return; // Likely RLS-denied or table-not-found. Both fine.
     if (Array.isArray(data) && data.length > 0) {
       // We received a row belonging to a fabricated user — RLS is misconfigured.
-      console.error('[RLS] Row Level Security is not enforcing per-user isolation.');
-      const banner = document.createElement('div');
-      banner.className = 'banner visible rls-banner';
-      banner.setAttribute('role', 'alert');
-      banner.innerHTML = `
-        <strong>Security misconfiguration detected.</strong>
-        <span>Your Supabase RLS is not enforcing per-user isolation.
-        User data may be publicly readable. See README → Supabase Setup.</span>
-      `;
-      document.body.prepend(banner);
+      // This is for whoever runs the app, so it goes to the console only.
+      console.error('[RLS] Row Level Security is not enforcing per-user isolation. User data may be publicly readable. See README → Supabase Setup.');
     }
   } catch(e) { /* defensive: never throw from a probe */ }
 }

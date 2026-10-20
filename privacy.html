@@ -106,7 +106,7 @@
 
     <section>
       <h2>On your device</h2>
-      <p>These live in your browser's <code>localStorage</code> and never leave your device. Clearing your browser data removes them.</p>
+      <p>These stay in your browser on this device and never leave it. Clearing your browser data removes them.</p>
       <ul>
         <li>Your sources: name, feed address, order, color, and whether each one shows in Today.</li>
         <li>Your theme: Auto, Day or Night.</li>
@@ -140,7 +140,7 @@
 
     <section>
       <h2>The feed proxy</h2>
-      <p>Feeds are fetched through a Cloudflare Worker, because most sites don't let a web app read their feed directly. When you add a source by its web address, the same proxy fetches that page to find its feed. The proxy:</p>
+      <p>Feeds are fetched through a small helper service we run on Cloudflare, because most sites don't let a web app read their feed directly. When you add a source by its web address, the same proxy fetches that page to find its feed. The proxy:</p>
       <ul>
         <li>Sees the address of the feed or page being fetched.</li>
         <li>Does <strong>not</strong> log which person asked for which feed.</li>
@@ -152,7 +152,7 @@
 
     <section>
       <h2>Signing in</h2>
-      <p>Sign-in uses Supabase magic links. There's no password: we email you a one-time link. Your email is stored in Supabase's <code>auth.users</code> table.</p>
+      <p>There's no password: we email you a one-time sign-in link. Your email address is kept with Supabase, the service that handles sign-in and stores your synced sources and clippings.</p>
       <p>You can sign out at any time from your account in the app. To delete your account entirely, get in touch and we'll remove your records from the database.</p>
     </section>
 
