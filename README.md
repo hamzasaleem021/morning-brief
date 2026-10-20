@@ -59,43 +59,106 @@ window.MB_CONFIG = {
 
 ### Supabase setup (required if you want sync)
 
-You **must** configure Row Level Security before deploying publicly. The shipped `sb_publishable_` key is designed to be client-side safe, but only with proper RLS policies on the `user_configs` table.
+You **must** configure Row Level Security before deploying publicly. The shipped `sb_publishable_` key is designed to be client-side safe, but only with proper RLS policies on both tables below.
 
-Minimum required schema:
+Run this once in the Supabase SQL editor. It creates both tables Morning Brief uses (`user_configs` for sources, `user_clippings` for Clippings), locks each row to its owner, and grants the app access.
+
+> **Since 30 Oct 2026, Supabase no longer gives new tables API access automatically.** The `grant` lines below are required — without them the app gets "permission denied".
 
 ```sql
+-- ── Sources: one row per user ─────────────────────────────────────────
 create table public.user_configs (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  config_data jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null unique references auth.users(id) on delete cascade,
+  config_data jsonb not null default '{"custom": [], "removed": []}'::jsonb,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
 );
 
 alter table public.user_configs enable row level security;
 
-create policy "users read own config" on public.user_configs
-  for select using (auth.uid() = user_id);
-
-create policy "users upsert own config" on public.user_configs
+create policy "users manage own config" on public.user_configs
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+create or replace function public.update_updated_at_column()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end; $$;
+
+create trigger update_user_configs_updated_at
+  before update on public.user_configs
+  for each row execute function public.update_updated_at_column();
+
+-- ── Clippings: one row per saved passage ──────────────────────────────
+create table public.user_clippings (
+  id               uuid primary key default gen_random_uuid(),
+  user_id          uuid not null references auth.users(id) on delete cascade,
+  text             text not null,
+  article_url      text not null,
+  article_title    text,
+  article_pub_date timestamptz,
+  source_id        text,
+  source_name      text,
+  source_domain    text,
+  note             text,
+  saved_at         timestamptz not null default now()
+);
+
+create index user_clippings_user_id_idx on public.user_clippings (user_id, saved_at desc);
+
+alter table public.user_clippings enable row level security;
+
+create policy "users read own clippings"   on public.user_clippings
+  for select using (auth.uid() = user_id);
+create policy "users insert own clippings" on public.user_clippings
+  for insert with check (auth.uid() = user_id);
+create policy "users update own clippings" on public.user_clippings
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "users delete own clippings" on public.user_clippings
+  for delete using (auth.uid() = user_id);
+
+-- ── Functions the app calls (load / save sources) ─────────────────────
+-- security definer + an explicit owner check: a signed-in user can only
+-- ever read or write their own row, and signed-out callers are refused.
 create or replace function public.get_user_config(p_user_id uuid)
-returns setof public.user_configs language sql security invoker as $$
-  select * from public.user_configs where user_id = p_user_id and auth.uid() = p_user_id;
-$$;
+returns table (config_data jsonb)
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or auth.uid() <> p_user_id then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  return query
+    select uc.config_data from public.user_configs uc where uc.user_id = p_user_id;
+end; $$;
 
 create or replace function public.upsert_user_config(p_user_id uuid, p_config_data jsonb)
-returns public.user_configs language plpgsql security invoker as $$
-declare result public.user_configs; begin
-  insert into public.user_configs (user_id, config_data, updated_at)
-  values (p_user_id, p_config_data, now())
-  on conflict (user_id) do update set config_data = excluded.config_data, updated_at = now()
-  where public.user_configs.user_id = auth.uid()
-  returning * into result;
-  return result;
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or auth.uid() <> p_user_id then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  insert into public.user_configs (user_id, config_data)
+  values (p_user_id, p_config_data)
+  on conflict (user_id) do update
+    set config_data = excluded.config_data, updated_at = now();
 end; $$;
+
+-- ── Access grants (required for new tables since 30 Oct 2026) ─────────
+grant select, insert, update, delete on public.user_configs   to authenticated;
+grant select, insert, update, delete on public.user_clippings to authenticated;
+grant select, insert, update, delete on public.user_configs   to service_role;
+grant select, insert, update, delete on public.user_clippings to service_role;
+
+revoke execute on function public.get_user_config(uuid)           from public, anon;
+revoke execute on function public.upsert_user_config(uuid, jsonb) from public, anon;
+grant  execute on function public.get_user_config(uuid)           to authenticated;
+grant  execute on function public.upsert_user_config(uuid, jsonb) to authenticated;
 ```
 
-Test that RLS is actually blocking cross-user reads before deploying. Authenticate as user A in one tab, attempt to query user B's row — it must return zero rows.
+Test that RLS is actually blocking cross-user reads before deploying. Authenticate as user A in one tab, attempt to query user B's row — it must return zero rows. Also confirm `rpc('get_user_config', { p_user_id: <user B's id> })` from user A returns a "not allowed" error.
 
 ### RSS proxy
 
