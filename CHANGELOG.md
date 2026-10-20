@@ -1,5 +1,70 @@
 # Changelog
 
+## v28 — Daylight
+
+A redesign around three rules: color means a source, your order decides, and
+every story is read on its own site. Cream by day, teal-black at night, a sun
+that rises at the top of Today and has fully risen at the end.
+
+### Changed
+- **Today** is a brief, not a feed. It shows what's new since you last had the
+  app open (per device), with the date, "N new stories", and where that count
+  comes from. On phones the first three sources with something new open in
+  full and the rest fold into one card that expands in place; sources with
+  nothing new, still loading, or failing (with Retry) sit in a quiet card. On
+  wide screens every source gets a card in a grid, with an aside for jumping
+  to a source and your latest clippings.
+- **Opened stories grey out** with "✓ Opened" instead of counting down.
+- **See earlier stories** shows everything fetched, not only what's new.
+- **Nothing new**, **couldn't reach your sources** and **first run** each have
+  their own screen. First run has a "Sign in" link for a new device.
+- **Navigation** is now three tabs (Today, Clippings, Sources) on phones and a
+  top nav on wide screens, with real routes (`#/`, `#/clippings`,
+  `#/sources`, `#/discover`) and working Back.
+- **Sources** is a screen, not a modal: reorder by drag or arrow keys, a switch
+  to show or hide a source in Today, and a sheet to rename, open the website
+  or remove it.
+- **Discover** has topic chips (your topics first), bundles, a list of all
+  topics and a sticky "N of 20" bar. "Full" opens the code sheet.
+- **Clippings** is a screen with filters (all, with notes, by source), search,
+  groups by day, and a ⋯ sheet to add a note, copy or delete. The share sheet
+  opens a full-screen Save clipping view.
+- **Account sheet** behind the avatar: sign-in, sync status, Auto/Day/Night,
+  install and privacy.
+- Stories show reading time when the feed carries the full text
+  ("9 min · 1 hour ago").
+- New sun app icons on cream; manifest colors to `#fffaf0`.
+
+### Added
+- **Add any web address.** Paste a page instead of a feed; Morning Brief finds
+  the feed from the page's `<link rel="alternate">` or common feed paths
+  (including Squarespace's `?format=rss`).
+- **Hide a source** without removing it (`hidden: true` in the synced config,
+  no schema change; hidden sources still count toward the limit).
+- **Rename a source.**
+
+### Fixed
+- `State`, `UI` and `Sync` are now on `window`, so Clippings' toasts and source
+  matching work (a signed-out Save used to do nothing at all).
+- The magic link no longer carries an in-app route in its redirect.
+- Sharing a second passage in the same session now opens the save screen.
+- A link riding along in shared text is no longer saved as part of the passage.
+
+### Config
+- `ARTICLES_PER_SOURCE` 5 → 10; excerpt length ~220; article cache 400.
+
+### Files modified
+
+| File | Changes |
+|---|---|
+| `morning-brief.html` | New head, stylesheet and markup; UI layer rewritten (Brief, Feeds, Today, Sources, Account, Router, sheets); State gains `setHidden`, `rename`, palette colors |
+| `discovery.js` | Rendering rewritten for the Discover screen; `render()` added |
+| `clippings.js` | Injected styles removed; Clippings screen, note and menu sheets, Save clipping view; `render()`, `latest()`, `mb:clippings-changed` |
+| `config.js` | `ARTICLES_PER_SOURCE` 10 |
+| `sw.js` | Cache bump v27 → v28 |
+| `manifest.json` | Cream theme and background colors |
+| `icon-192.png`, `icon-512.png` | The sun mark |
+
 ## v26 — OPML Import / Export
 
 Portability release. An anti-lock-in reader that locked your source list in

@@ -40,7 +40,7 @@ window.MB_CONFIG = Object.freeze({
   MAX_SOURCES_HARD_CAP: 200,  // ceiling even voucher codes can't exceed
   FETCH_TIMEOUT:     5000,
   FETCH_CONCURRENCY: 5,
-  ARTICLES_PER_SOURCE: 5,
+  ARTICLES_PER_SOURCE: 10,
 
   // ── Voucher codes ────────────────────────────────────────────────────
   // Map of SHA-256 hashed codes to the limit they unlock.

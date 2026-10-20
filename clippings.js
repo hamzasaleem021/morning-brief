@@ -11,12 +11,16 @@
 //   - SW Cache:      clippings-inbox / clippings-pending (Web Share intake)
 //
 // Public API:
-//   window.Clippings.open()   — open the browse modal
-//   window.Clippings.close()  — close the browse modal
-//   window.Clippings.count()  — number of stored clippings
+//   window.Clippings.open()     — go to the Clippings view (#/clippings)
+//   window.Clippings.close()    — go back
+//   window.Clippings.render()   — render into #clippings-root
+//   window.Clippings.count()    — number of stored clippings
+//   window.Clippings.latest(n)  — the n newest clippings (desktop aside)
+//
+// Fires 'mb:clippings-changed' on document whenever the list changes.
 //
 // Tear-down: delete this file + remove the <script src="./clippings.js">
-// tag + remove the masthead button and overlay div. State.* / UI.* / Sync.*
+// tag + the Clippings view, tab and share view. State.* / UI.* / Sync.*
 // in the main app remain untouched.
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -42,8 +46,7 @@
   let realtimeNonce = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
     : String(Date.now()) + Math.random();
-  let hasInjectedStyles = false;
-  let hasHandledShareThisLoad = false;
+  let shareBusy = false;           // the inbox is one-shot; this only stops overlap
   let searchDebounceTimer = null;
 
   // ── Utilities ─────────────────────────────────────────────────────────
@@ -247,11 +250,11 @@
 
   function rememberOutboundArticleClick(e) {
     const link = e.target && e.target.closest
-      ? e.target.closest('a.article-featured, a.article-item')
+      ? e.target.closest('a.story')
       : null;
     if (!link) return;
     const url = link.href || link.getAttribute('href') || '';
-    const titleEl = link.querySelector('.featured-title, .item-title');
+    const titleEl = link.querySelector('.story-title');
     const title = titleEl ? titleEl.textContent : link.textContent;
     rememberArticleContext(url, title);
   }
@@ -570,19 +573,19 @@
     };
 
     if (!db()) {
-      toast('Sign in to save clippings across devices.');
+      toast('Sign in to keep clippings.');
       return null;
     }
 
     const user = await currentUser();
     if (!user) {
-      toast('Sign in to save clippings across devices.');
+      toast('Sign in to keep clippings.');
       return null;
     }
 
     const res = await pushInsert(clip, user);
     if (!res.ok && res.pending) {
-      toast('Sign in to save clippings across devices.');
+      toast('Sign in to keep clippings.');
       return null;
     }
     if (!res.ok && !res.pending) {
@@ -674,10 +677,11 @@
 
   async function handleSharedPayloadIfAny() {
     if (location.hash !== '#clippings/share') return;
-    if (hasHandledShareThisLoad) return;
-    hasHandledShareThisLoad = true;
-
-    const payload = await readShareInbox();
+    if (shareBusy) return;
+    shareBusy = true;
+    let payload;
+    try { payload = await readShareInbox(); }
+    finally { shareBusy = false; }
     clearShareHash();
     if (!payload) return;
 
@@ -688,9 +692,11 @@
     let url  = (payload.url  || '').trim();
     let title = (payload.title || '').trim();
 
+    // Strip a link riding along in the text either way; use it as the
+    // article URL only when the share didn't send one.
     const fromText = extractSharedUrl(text);
-    if (!url && fromText.url) {
-      url = fromText.url;
+    if (fromText.url) {
+      if (!url) url = fromText.url;
       text = fromText.text;
     }
 
@@ -699,392 +705,175 @@
     if (!title && recent && (!url || sameArticleUrl(recent.url, url))) title = recent.title || '';
 
     if (!text && !url) return;
-    openSaveSheet({ text, url, title });
+    openShareView({ text, url, title });
   }
 
   // ═════════════════════════════════════════════════════════════════════
-  // UI: STYLES (injected once)
-  // Uses existing CSS variables from morning-brief.html, so theme + dark
-  // mode + reduced motion all inherit.
+  // UI: CLIPPINGS VIEW (#clippings-root)
+  // Styles live in the main stylesheet. The view is built once, then only
+  // the summary, filters and groups re-render.
   // ═════════════════════════════════════════════════════════════════════
 
-  function injectStyles() {
-    if (hasInjectedStyles) return;
-    hasInjectedStyles = true;
-    const style = document.createElement('style');
-    style.setAttribute('data-clippings', '');
-    style.textContent = `
-      .clp-search-bar {
-        position: sticky; top: 0; z-index: 4;
-        padding: 12px 28px;
-        background: var(--paper);
-        border-bottom: 1px solid var(--rule);
-      }
-      .clp-search-wrap { position: relative; }
-      .clp-search {
-        width: 100%;
-        padding: 9px 14px 9px 38px;
-        font-family: var(--body);
-        font-size: 0.88rem;
-        border: 1px solid var(--rule);
-        border-radius: 8px;
-        background: var(--bg);
-        color: var(--ink);
-        outline: none;
-        transition: border-color 0.15s, box-shadow 0.15s;
-      }
-      .clp-search:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-soft);
-      }
-      .clp-search-icon {
-        position: absolute; left: 12px; top: 50%;
-        transform: translateY(-50%);
-        color: var(--ink-muted);
-        pointer-events: none;
-      }
-      .clp-content { padding: 18px 28px 28px; }
+  const ICON = {
+    share: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
+    search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+    more: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
+    ext: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>',
+    check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--ok)"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  };
+  const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-      .clp-empty {
-        padding: 40px 16px 30px;
-        text-align: center;
-        color: var(--ink-muted);
-      }
-      .clp-empty h3 {
-        font-family: var(--display);
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: var(--ink);
-        margin-bottom: 8px;
-      }
-      .clp-empty p {
-        font-size: 0.88rem;
-        line-height: 1.6;
-        margin: 6px auto;
-        max-width: 460px;
-      }
-      .clp-empty ol {
-        text-align: left;
-        max-width: 380px;
-        margin: 18px auto 0;
-        padding-left: 22px;
-        font-size: 0.85rem;
-        line-height: 1.7;
-        color: var(--ink-light);
-      }
-      .clp-empty ol strong { color: var(--ink); font-weight: 500; }
+  let filter = 'all';      // 'all' | 'notes'
+  let sourceFilter = '';   // a source name, '' = every source
+  let searchOpen = false;
+  let notifyQueued = false;
 
-      .clp-group { margin-bottom: 30px; }
-      .clp-group-header {
-        display: flex;
-        align-items: baseline;
-        gap: 12px;
-        padding-bottom: 8px;
-        margin-bottom: 12px;
-        border-bottom: 1px solid var(--rule);
-      }
-      .clp-group-name {
-        font-family: var(--display);
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: var(--ink);
-      }
-      .clp-group-count {
-        font-size: 0.7rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--ink-muted);
-      }
-
-      .clp-card {
-        background: var(--paper);
-        border: 1px solid var(--rule);
-        border-left: 3px solid var(--accent);
-        border-radius: 4px;
-        padding: 16px 18px;
-        margin-bottom: 12px;
-        cursor: pointer;
-        transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-      }
-      .clp-card:hover {
-        background: var(--accent-soft);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      }
-      .clp-card:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 3px var(--accent-soft);
-      }
-      .clp-passage {
-        font-family: var(--display);
-        font-style: italic;
-        font-size: 1rem;
-        line-height: 1.6;
-        color: var(--ink);
-        margin-bottom: 10px;
-      }
-      .clp-note {
-        font-size: 0.82rem;
-        color: var(--ink-light);
-        line-height: 1.5;
-        margin: 6px 0 10px;
-        padding: 8px 10px;
-        background: var(--bg);
-        border-radius: 4px;
-        border-left: 2px solid var(--rule);
-      }
-      .clp-meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.72rem;
-        color: var(--ink-muted);
-        padding-top: 8px;
-        border-top: 1px solid var(--rule);
-      }
-      .clp-meta-title {
-        color: var(--ink-light);
-        font-weight: 500;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex: 1;
-        min-width: 0;
-      }
-      .clp-meta-sep { color: var(--rule); }
-      .clp-actions {
-        margin-left: auto;
-        display: flex;
-        gap: 6px;
-      }
-      .clp-action-btn {
-        background: none;
-        border: 1px solid transparent;
-        border-radius: 4px;
-        padding: 3px 8px;
-        font-size: 0.7rem;
-        color: var(--ink-muted);
-        cursor: pointer;
-        font-family: var(--body);
-      }
-      .clp-action-btn:hover {
-        color: var(--accent);
-        border-color: var(--accent);
-      }
-      .clp-action-btn:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 3px var(--accent-soft);
-      }
-
-      /* ── Save sheet ─────────────────────────────────────────── */
-      .clp-save-overlay {
-        position: fixed; inset: 0;
-        background: rgba(26,24,20,0.6);
-        backdrop-filter: blur(2px);
-        z-index: 10003;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.15s;
-      }
-      .clp-save-overlay.visible {
-        opacity: 1; pointer-events: auto;
-      }
-      .clp-save-box {
-        background: var(--paper);
-        border: 1px solid var(--rule);
-        border-radius: 10px;
-        padding: 22px;
-        width: 100%;
-        max-width: 480px;
-        max-height: min(80dvh, 80vh);
-        overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-      }
-      .clp-save-title {
-        font-family: var(--display);
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin-bottom: 4px;
-        color: var(--ink);
-      }
-      .clp-save-sub {
-        font-size: 0.78rem;
-        font-style: italic;
-        font-family: var(--display);
-        color: var(--ink-muted);
-        margin-bottom: 16px;
-      }
-      .clp-save-source-line {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.78rem;
-        color: var(--ink-light);
-        margin-bottom: 14px;
-        padding: 8px 10px;
-        background: var(--accent-soft);
-        border-radius: 4px;
-      }
-      .clp-save-source-line strong { color: var(--ink); font-weight: 500; }
-      .clp-save-source-line .clp-source-warn { color: var(--accent); }
-      .clp-save-textarea, .clp-save-note {
-        width: 100%;
-        font-family: var(--body);
-        font-size: 0.92rem;
-        color: var(--ink);
-        background: var(--bg);
-        border: 1px solid var(--rule);
-        border-radius: 6px;
-        padding: 10px 12px;
-        outline: none;
-        resize: vertical;
-        transition: border-color 0.15s, box-shadow 0.15s;
-        margin-bottom: 12px;
-      }
-      .clp-save-textarea:focus, .clp-save-note:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-soft);
-      }
-      .clp-save-textarea { min-height: 90px; font-size: 0.95rem; line-height: 1.55; }
-      .clp-save-note { min-height: 50px; }
-      .clp-save-counter {
-        font-size: 0.72rem;
-        color: var(--ink-muted);
-        text-align: right;
-        margin-top: -8px;
-        margin-bottom: 10px;
-      }
-      .clp-save-counter.over { color: var(--accent); }
-      .clp-save-label {
-        display: block;
-        font-size: 0.72rem;
-        color: var(--ink-muted);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-      }
-      .clp-save-actions {
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-        margin-top: 6px;
-      }
-      .clp-save-actions button {
-        font-family: var(--body);
-        font-size: 0.88rem;
-        padding: 8px 18px;
-        border-radius: 6px;
-        cursor: pointer;
-        border: 1px solid var(--rule);
-        background: transparent;
-        color: var(--ink);
-      }
-      .clp-save-actions button:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 3px var(--accent-soft);
-      }
-      .clp-save-cancel:hover { background: var(--bg); }
-      .clp-save-ok {
-        background: var(--ink);
-        color: var(--paper);
-        border-color: var(--ink);
-      }
-      .clp-save-ok:hover { background: var(--accent); border-color: var(--accent); }
-      .clp-save-ok:disabled { opacity: 0.5; cursor: not-allowed; }
-
-      @media (max-width: 699px) {
-        .clp-search-bar { padding: 10px 16px; }
-        .clp-content { padding: 14px 16px 24px; }
-        .clp-save-overlay { align-items: flex-end; padding: 0; }
-        .clp-save-box {
-          border-radius: 16px 16px 0 0;
-          max-width: 100%;
-          padding: 20px 18px;
-          padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
-        }
-      }
-    `;
-    document.head.appendChild(style);
+  function isActive() {
+    const v = document.getElementById('view-clippings');
+    return !!(v && v.classList.contains('active'));
   }
 
-  // ═════════════════════════════════════════════════════════════════════
-  // UI: BROWSE MODAL
-  // ═════════════════════════════════════════════════════════════════════
+  // Tell the rest of the app (the desktop aside) that clippings changed.
+  function notify() {
+    if (notifyQueued) return;
+    notifyQueued = true;
+    queueMicrotask(() => {
+      notifyQueued = false;
+      document.dispatchEvent(new CustomEvent('mb:clippings-changed'));
+    });
+  }
+  const updateBadge = notify;
+
+  function renderList() {
+    notify();
+    if (isActive()) render();
+  }
 
   function open() {
-    injectStyles();
-    const overlay = document.getElementById('clippings-overlay');
-    if (!overlay) return;
-    ensureBodyShell();
-    overlay.classList.add('open');
-    renderList();
-    // Focus search input
-    setTimeout(() => {
-      const input = document.getElementById('clp-search');
-      if (input) input.focus();
-    }, 80);
+    if (window.MB && window.MB.navigate) window.MB.navigate('#/clippings');
   }
 
   function close() {
-    document.getElementById('clippings-overlay')?.classList.remove('open');
+    if (window.MB && window.MB.back) window.MB.back('#/');
   }
 
-  function ensureBodyShell() {
-    const body = document.getElementById('clippings-body');
-    if (!body) return;
-    if (body.querySelector('.clp-content')) return; // already mounted
-    body.innerHTML = `
-      <div class="clp-search-bar">
-        <div class="clp-search-wrap">
-          <svg class="clp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input id="clp-search" class="clp-search" type="text"
-                 placeholder="Search clippings…" autocomplete="off" spellcheck="false">
+  function dayDiff(ts) {
+    const a = new Date(), b = new Date(ts);
+    const sa = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+    const sb = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
+    return Math.round((sa - sb) / 864e5);
+  }
+
+  function clock(d) { return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; }
+
+  function groupLabel(ts) {
+    const dd = dayDiff(ts);
+    if (dd <= 0) return 'Today';
+    if (dd === 1) return 'Yesterday';
+    if (dd < 7) return 'Earlier this week';
+    const d = new Date(ts);
+    return d.getFullYear() === new Date().getFullYear()
+      ? MONTH_NAMES[d.getMonth()]
+      : `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
+  function whenLabel(ts) {
+    const d = new Date(ts);
+    const dd = dayDiff(ts);
+    if (dd <= 1) return clock(d);
+    if (dd < 7) return DAY_NAMES[d.getDay()];
+    return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
+  }
+
+  function sourceFor(c) {
+    if (!window.State || typeof State.getSources !== 'function') return null;
+    const list = State.getSources();
+    return (c.sourceId && list.find(s => s.id === c.sourceId))
+      || (c.sourceDomain && list.find(s => stripWWW(s.domain) === stripWWW(c.sourceDomain)))
+      || null;
+  }
+
+  function neutralPeb(name, size) {
+    const m = String(name || '').trim().replace(/^the\s+/i, '').match(/[\p{L}\p{N}]/u);
+    return `<span class="peb ${size || ''} neutral" aria-hidden="true">${esc(m ? m[0].toUpperCase() : '•')}</span>`;
+  }
+
+  function pebFor(c, size) {
+    const src = sourceFor(c);
+    if (src && window.MB && typeof window.MB.peb === 'function') return window.MB.peb(src, size);
+    return neutralPeb(c.sourceName || c.sourceDomain, size);
+  }
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function tipHTML() {
+    const ua = navigator.userAgent;
+    const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (ios) {
+      return "On iPhone and iPad the share sheet doesn't offer web apps yet, so passages can't be sent to Morning Brief from there for now.";
+    }
+    if (/android/i.test(ua) && !isStandalone()) {
+      return '<strong>Install first.</strong> Once Morning Brief is on your home screen it shows up in your share sheet. Then select text in any article, tap Share and choose Morning Brief.';
+    }
+    return 'To clip, select text in any article, tap Share, then choose Morning Brief.';
+  }
+
+  function ensureShell() {
+    const root = document.getElementById('clippings-root');
+    if (!root) return null;
+    if (root.dataset.ready) return root;
+    root.dataset.ready = '1';
+    root.innerHTML = `
+      <section class="page-title">
+        <div>
+          <span class="eyebrow">Kept</span>
+          <h1>Clippings</h1>
+          <span class="sub tnum" id="clp-summary"></span>
+        </div>
+      </section>
+      <div class="tip">${ICON.share}<p id="clp-tip"></p></div>
+      <div class="clip-filters" role="group" aria-label="Filter clippings" id="clp-filters"></div>
+      <div class="clip-search collapsed" id="clp-search-row">
+        <div class="search-wrap">
+          <label for="clp-search" class="sr-only">Search clippings</label>
+          ${ICON.search}
+          <input id="clp-search" class="field" type="search" placeholder="Search clippings" autocomplete="off" spellcheck="false">
         </div>
       </div>
-      <div class="clp-content" id="clp-content"></div>
-    `;
-    const input = document.getElementById('clp-search');
-    if (input) {
-      input.value = searchQuery;
-      input.addEventListener('input', (e) => {
-        clearTimeout(searchDebounceTimer);
-        const val = e.target.value;
-        searchDebounceTimer = setTimeout(() => {
-          searchQuery = val.trim().toLowerCase();
-          renderList();
-        }, SEARCH_DEBOUNCE_MS);
-      });
-    }
-    // Card click delegation (open, edit-note, delete)
-    body.addEventListener('click', (e) => {
-      const action = e.target.closest('[data-clp-action]');
-      if (action) {
-        e.stopPropagation();
-        const id = action.getAttribute('data-id');
-        const what = action.getAttribute('data-clp-action');
-        if (what === 'delete') deleteClipping(id);
-        else if (what === 'edit-note') promptEditNote(id);
-        else if (what === 'open') openClipping(id);
-        return;
-      }
-      const card = e.target.closest('[data-clp-id]');
-      if (card) openClipping(card.getAttribute('data-clp-id'));
+      <div class="clip-groups" id="clp-groups"></div>`;
+
+    const input = root.querySelector('#clp-search');
+    input.value = searchQuery;
+    input.addEventListener('input', (e) => {
+      clearTimeout(searchDebounceTimer);
+      const val = e.target.value;
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = val.trim().toLowerCase();
+        renderGroups();
+      }, SEARCH_DEBOUNCE_MS);
     });
+
+    root.addEventListener('click', (e) => {
+      const f = e.target.closest('[data-clp-filter]');
+      if (f) { filter = f.dataset.clpFilter; render(); return; }
+      const menu = e.target.closest('[data-clp-menu]');
+      if (menu) { openMenu(menu.dataset.clpMenu); return; }
+    });
+    root.addEventListener('change', (e) => {
+      if (e.target.id === 'clp-source') { sourceFilter = e.target.value; render(); }
+    });
+    return root;
   }
 
   function filteredClippings() {
-    if (!searchQuery) return clippings;
     const q = searchQuery;
     return clippings.filter(c => {
+      if (filter === 'notes' && !c.note) return false;
+      if (sourceFilter && (c.sourceName || c.sourceDomain || '') !== sourceFilter) return false;
+      if (!q) return true;
       return (c.text || '').toLowerCase().includes(q)
           || (c.note || '').toLowerCase().includes(q)
           || (c.articleTitle || '').toLowerCase().includes(q)
@@ -1092,219 +881,274 @@
     });
   }
 
-  function renderList() {
-    const content = document.getElementById('clp-content');
-    if (!content) return;
+  function sourceNames() {
+    return Array.from(new Set(clippings.map(c => c.sourceName || c.sourceDomain || '').filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b));
+  }
 
-    const shown = filteredClippings();
-
-    if (!clippings.length) {
-      content.innerHTML = renderEmpty();
-      return;
-    }
-    if (!shown.length) {
-      content.innerHTML = `<div class="clp-empty"><h3>No matches</h3><p>Nothing in your clippings matches "${esc(searchQuery)}".</p></div>`;
-      return;
-    }
-
-    // Group by source
-    const groups = new Map();
-    shown.forEach(c => {
-      const key = c.sourceName || c.sourceDomain || 'Unknown source';
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(c);
-    });
-
-    content.innerHTML = Array.from(groups.entries()).map(([sourceName, clips]) => `
-      <div class="clp-group">
-        <div class="clp-group-header">
-          <span class="clp-group-name">${esc(sourceName)}</span>
-          <span class="clp-group-count">${clips.length} ${clips.length === 1 ? 'clipping' : 'clippings'}</span>
-        </div>
-        ${clips.map(renderCard).join('')}
-      </div>
-    `).join('');
+  function renderFilters() {
+    const el = document.getElementById('clp-filters');
+    if (!el) return;
+    const names = sourceNames();
+    if (sourceFilter && !names.includes(sourceFilter)) sourceFilter = '';
+    const notes = clippings.filter(c => c.note).length;
+    const hadFocus = document.activeElement && el.contains(document.activeElement) ? document.activeElement.id : '';
+    el.innerHTML = `
+      <button type="button" class="chip tnum" id="clp-f-all" data-clp-filter="all" aria-pressed="${filter === 'all'}">All ${clippings.length}</button>
+      <button type="button" class="chip tnum" id="clp-f-notes" data-clp-filter="notes" aria-pressed="${filter === 'notes'}">With notes ${notes}</button>
+      ${names.length > 1 ? `
+        <label for="clp-source" class="sr-only">Source</label>
+        <select id="clp-source" class="chip chip-select">
+          <option value="">Source</option>
+          ${names.map(n => `<option value="${esc(n)}"${n === sourceFilter ? ' selected' : ''}>${esc(n)}</option>`).join('')}
+        </select>` : ''}`;
+    if (hadFocus) document.getElementById(hadFocus)?.focus({ preventScroll: true });
   }
 
   function renderCard(c) {
-    const pubDate = fmtDate(c.articlePubDate);
-    const savedDate = fmtDate(c.savedAt);
-    const dateLine = pubDate
-      ? `from ${esc(pubDate)} · saved ${esc(savedDate)}`
-      : `saved ${esc(savedDate)}`;
-    const title = c.articleTitle ? esc(c.articleTitle) : esc(c.articleUrl);
-    const note = c.note ? `<div class="clp-note">${esc(c.note)}</div>` : '';
+    const saved = new Date(c.savedAt || 0).getTime();
+    const url = buildScrollUrl(c);
+    const title = c.articleTitle || c.articleUrl || '';
     return `
-      <div class="clp-card" data-clp-id="${esc(c.id)}" role="button" tabindex="0">
-        <div class="clp-passage">"${esc(c.text)}"</div>
-        ${note}
-        <div class="clp-meta">
-          <span class="clp-meta-title" title="${esc(c.articleTitle || c.articleUrl)}">${title}</span>
-          <span class="clp-meta-sep">·</span>
-          <span>${dateLine}</span>
-          <span class="clp-actions">
-            <button class="clp-action-btn" data-clp-action="edit-note" data-id="${esc(c.id)}" type="button">${c.note ? 'Edit note' : 'Add note'}</button>
-            <button class="clp-action-btn" data-clp-action="delete" data-id="${esc(c.id)}" type="button">Delete</button>
-          </span>
+      <article class="card clip">
+        <div class="clip-top">
+          ${pebFor(c, 'md')}
+          <span class="who">${esc(c.sourceName || c.sourceDomain || 'Unknown source')}</span>
+          <span class="when tnum">${esc(whenLabel(saved))}</span>
+          <button type="button" class="icon-btn" id="clp-m-${esc(c.id)}" data-clp-menu="${esc(c.id)}" aria-label="More for this clipping">${ICON.more}</button>
         </div>
-      </div>
-    `;
+        <blockquote>${esc(c.text)}</blockquote>
+        ${c.note ? `<div class="clip-note"><span class="k">Your note</span><span class="v">${esc(c.note)}</span></div>` : ''}
+        ${url ? `
+          <a class="clip-foot" href="${esc(url)}" target="_blank" rel="noopener noreferrer">
+            <span class="title">${esc(title)}</span>
+            <span class="go">Open passage ${ICON.ext}</span>
+          </a>` : ''}
+      </article>`;
   }
 
   function renderEmpty() {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
-      || window.navigator.standalone === true;
+    const signedIn = isLoggedIn();
     return `
-      <div class="clp-empty">
-        <h3>Nothing saved yet</h3>
-        <p>Clippings collects passages worth remembering from the articles you read through Morning Brief.</p>
-        ${standalone ? `
-          <p>To save a clipping:</p>
-          <ol>
-            <li>Open any article from your brief</li>
-            <li>Long-press to select text — a passage, a sentence, a phrase</li>
-            <li>Tap <strong>Share</strong>, choose <strong>Morning Brief</strong></li>
-            <li>Confirm in the save sheet</li>
-          </ol>
-          <p style="margin-top:18px;">Tap any saved clipping to return to the article at that exact passage.</p>
-        ` : `
-          <p style="margin-top:14px;"><strong>Install Morning Brief first.</strong> Web Share Target — the system feature that puts Morning Brief in your phone's share sheet — only works on installed PWAs.</p>
-          <p style="margin-top:8px;">Use the install link in Manage Sources, or your browser's <em>Add to Home Screen</em>.</p>
-        `}
-      </div>
-    `;
+      <div class="clip-empty">
+        <h2>Nothing kept yet</h2>
+        <p>When a sentence is worth keeping, select it in the article and share it to Morning Brief. It lands here with a link back to that exact spot.</p>
+        ${signedIn ? '' : `<p>Clippings are saved to your account, so <button type="button" class="link-btn" data-open-account>sign in</button> first.</p>`}
+      </div>`;
   }
 
-  // ═════════════════════════════════════════════════════════════════════
-  // UI: SAVE SHEET (opened by share-target intake)
-  // ═════════════════════════════════════════════════════════════════════
-
-  function openSaveSheet({ text, url, title }) {
-    injectStyles();
-    let overlay = document.getElementById('clp-save-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'clp-save-overlay';
-      overlay.className = 'clp-save-overlay';
-      overlay.setAttribute('role', 'dialog');
-      overlay.setAttribute('aria-modal', 'true');
-      overlay.setAttribute('aria-labelledby', 'clp-save-title');
-      overlay.innerHTML = `
-        <div class="clp-save-box">
-          <h3 id="clp-save-title" class="clp-save-title">Save clipping</h3>
-          <p class="clp-save-sub">Trim the passage, add a note, save.</p>
-          <div class="clp-save-source-line" id="clp-save-source-line"></div>
-          <label class="clp-save-label" for="clp-save-text">Passage</label>
-          <textarea id="clp-save-text" class="clp-save-textarea" spellcheck="false"></textarea>
-          <div class="clp-save-counter" id="clp-save-counter">0 / ${MAX_TEXT}</div>
-          <label class="clp-save-label" for="clp-save-note">Note (optional)</label>
-          <textarea id="clp-save-note" class="clp-save-note" placeholder="Why does this matter?" spellcheck="true"></textarea>
-          <div class="clp-save-actions">
-            <button type="button" class="clp-save-cancel" id="clp-save-cancel">Cancel</button>
-            <button type="button" class="clp-save-ok" id="clp-save-ok">Save</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
+  function renderGroups() {
+    const el = document.getElementById('clp-groups');
+    if (!el) return;
+    const hadFocus = document.activeElement && el.contains(document.activeElement) ? document.activeElement.id : '';
+    if (!clippings.length) { el.innerHTML = renderEmpty(); return; }
+    const shown = filteredClippings();
+    if (!shown.length) {
+      el.innerHTML = `<div class="clip-empty"><h2>No matches</h2><p>None of your clippings match that. Try another word or filter.</p></div>`;
+      return;
     }
+    const groups = [];
+    shown.forEach(c => {
+      const label = groupLabel(new Date(c.savedAt || 0).getTime());
+      let g = groups[groups.length - 1];
+      if (!g || g.label !== label) { g = { label, items: [] }; groups.push(g); }
+      g.items.push(c);
+    });
+    el.innerHTML = groups.map(g => `
+      <h2 class="eyebrow">${esc(g.label)}</h2>
+      ${g.items.map(renderCard).join('')}`).join('');
+    if (hadFocus) document.getElementById(hadFocus)?.focus({ preventScroll: true });
+  }
 
-    const ta    = overlay.querySelector('#clp-save-text');
-    const note  = overlay.querySelector('#clp-save-note');
-    const ok    = overlay.querySelector('#clp-save-ok');
-    const cancel = overlay.querySelector('#clp-save-cancel');
-    const counter = overlay.querySelector('#clp-save-counter');
-    const srcLine = overlay.querySelector('#clp-save-source-line');
+  function render() {
+    const root = ensureShell();
+    if (!root) return;
+    const n = clippings.length;
+    const sources = sourceNames().length;
+    document.getElementById('clp-summary').textContent = n
+      ? `${n} ${n === 1 ? 'passage' : 'passages'} from ${sources} ${sources === 1 ? 'source' : 'sources'}`
+      : 'Passages you keep from what you read';
+    document.getElementById('clp-tip').innerHTML = tipHTML();
+    document.getElementById('clp-search-row').classList.toggle('collapsed', !searchOpen);
+    document.getElementById('clip-search-btn')?.setAttribute('aria-expanded', String(searchOpen));
+    renderFilters();
+    renderGroups();
+  }
 
-    ta.value = (text || '').slice(0, MAX_TEXT);
-    note.value = '';
-    ok.textContent = url ? 'Save & Return' : 'Save';
-    updateCounter();
-
-    // Show matched source (or warn)
-    const matched = matchSource(url || '');
-    const meta = lookupArticleMeta(url || '');
-    const articleTitle = title || (meta && meta.title) || '';
-
-    if (matched) {
-      srcLine.innerHTML = `Saving to <strong>${esc(matched.name)}</strong>${articleTitle ? ` · ${esc(articleTitle)}` : ''}`;
-    } else {
-      let host = '';
-      try { host = stripWWW(new URL(url || '').hostname); } catch {}
-      srcLine.innerHTML = `<span class="clp-source-warn">⚠</span> Not from one of your sources${host ? ` (${esc(host)})` : ''} — still saving as a clipping.`;
+  function toggleSearch() {
+    searchOpen = !searchOpen;
+    render();
+    if (searchOpen) document.getElementById('clp-search')?.focus();
+    else if (searchQuery) {
+      searchQuery = '';
+      const input = document.getElementById('clp-search');
+      if (input) input.value = '';
+      renderGroups();
     }
+  }
 
-    function updateCounter() {
-      const n = ta.value.length;
-      counter.textContent = `${n} / ${MAX_TEXT}`;
-      counter.classList.toggle('over', n >= MAX_TEXT);
-    }
-    function cleanup() {
-      overlay.classList.remove('visible');
-      ta.oninput = null; ok.onclick = null; cancel.onclick = null;
-      overlay.onclick = null;
-      document.removeEventListener('keydown', onKey);
-    }
-    function onKey(e) {
-      if (e.key === 'Escape') cleanup();
-      else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit();
-    }
-    async function submit() {
-      const trimmed = ta.value.trim();
-      if (!trimmed) { toast('Empty passage — nothing to save.'); return; }
-      ok.disabled = true;
-      ok.textContent = 'Saving…';
-      try {
-        const saved = await saveClipping({
-          text: trimmed,
-          note: note.value,
-          articleUrl: url || '',
-          articleTitle,
-          source: matched || null
-        });
-        if (!saved) return;
-        const returnUrl = buildScrollUrl(saved);
-        cleanup();
-        if (returnUrl) {
-          toast('Saved to Clippings. Returning to article...', { duration: 1600 });
-          setTimeout(() => { window.location.href = returnUrl; }, 350);
-        } else {
-          toast('Clipping saved.', { duration: 2000 });
-        }
-      } finally {
-        ok.disabled = false;
-        ok.textContent = url ? 'Save & Return' : 'Save';
+  // ── ⋯ menu and the note sheet ───────────────────────────────────────
+  function sheet(html, opts) {
+    return (window.MB && typeof window.MB.sheet === 'function') ? window.MB.sheet(html, opts) : null;
+  }
+
+  function openMenu(id) {
+    const c = findById(id);
+    if (!c) return;
+    const url = buildScrollUrl(c);
+    const s = sheet(`
+      <p class="lede clip-lede">“${esc(c.text.length > 160 ? c.text.slice(0, 160).trim() + '…' : c.text)}”</p>
+      <div class="menu-list" style="margin-top: 12px">
+        <button type="button" data-m="note">${c.note ? 'Edit note' : 'Add a note'}</button>
+        <button type="button" data-m="copy">Copy passage</button>
+        ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open passage ${ICON.ext}</a>` : ''}
+        <button type="button" class="danger" data-m="delete">Delete clipping</button>
+      </div>`, { title: c.sourceName || 'Clipping' });
+    if (!s) return;
+    s.sheet.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-m]');
+      if (!b) return;
+      const what = b.dataset.m;
+      s.close();
+      if (what === 'note') setTimeout(() => promptEditNote(id), 60);
+      else if (what === 'copy') {
+        try { await navigator.clipboard.writeText(c.text); toast('Passage copied.'); }
+        catch { toast("Couldn't copy. Select the text and copy it instead."); }
+      } else if (what === 'delete') {
+        setTimeout(() => deleteClipping(id), 60);
       }
-    }
-
-    ta.oninput = updateCounter;
-    ok.onclick = submit;
-    cancel.onclick = cleanup;
-    overlay.onclick = (e) => { if (e.target === overlay) cleanup(); };
-    document.addEventListener('keydown', onKey);
-
-    overlay.classList.add('visible');
-    setTimeout(() => ta.focus(), 60);
+    });
   }
 
   async function promptEditNote(id) {
     const c = findById(id);
     if (!c) return;
-    // Tiny inline prompt — keep it simple, this isn't a frequent action
-    const next = window.prompt('Note for this clipping:', c.note || '');
-    if (next === null) return; // cancelled
-    await updateNote(id, next);
-    renderList();
+    const s = sheet(`
+      <div class="body">
+        <label class="label" for="clp-note-input">Note</label>
+        <textarea id="clp-note-input" class="field" rows="4" maxlength="1000" placeholder="Why you kept this" data-autofocus>${esc(c.note || '')}</textarea>
+      </div>
+      <div class="actions row">
+        <button type="button" class="btn primary" data-save>Save note</button>
+        <button type="button" class="btn" data-sheet-close>Cancel</button>
+      </div>`, { title: c.note ? 'Edit note' : 'Add a note' });
+    if (!s) {
+      const next = window.prompt('Note for this clipping:', c.note || '');
+      if (next === null) return;
+      await updateNote(id, next);
+      renderList();
+      return;
+    }
+    const ta = s.sheet.querySelector('#clp-note-input');
+    const save = async () => {
+      s.close();
+      await updateNote(id, ta.value);
+      renderList();
+    };
+    s.sheet.querySelector('[data-save]').addEventListener('click', save);
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save(); });
   }
 
   // ═════════════════════════════════════════════════════════════════════
-  // Masthead badge — "Clippings (12)"
+  // UI: SAVE CLIPPING (full-screen view-share, opened by the share sheet)
   // ═════════════════════════════════════════════════════════════════════
 
-  function updateBadge() {
-    const el = document.getElementById('clippings-count-badge');
-    if (!el) return;
-    const n = clippings.length;
-    el.textContent = n > 0 ? `(${n})` : '';
+  let shareState = null;
+
+  function updateCounter() {
+    const ta = document.getElementById('clp-save-text');
+    const counter = document.getElementById('clp-save-counter');
+    if (!ta || !counter) return;
+    const n = ta.value.length;
+    // Only near the limit — otherwise the hint
+    counter.textContent = n >= MAX_TEXT - 200
+      ? `${n.toLocaleString()} / ${MAX_TEXT.toLocaleString()}`
+      : 'Trim to the part you want';
+    counter.classList.toggle('is-error', n >= MAX_TEXT);
+  }
+
+  function openShareView({ text, url, title }) {
+    const ta = document.getElementById('clp-save-text');
+    if (!ta) return;
+    const note = document.getElementById('clp-save-note');
+    const match = document.getElementById('share-match');
+    const matched = matchSource(url || '');
+    const meta = lookupArticleMeta(url || '');
+    const articleTitle = title || (meta && meta.title) || '';
+    let host = '';
+    try { host = stripWWW(new URL(url || '').hostname); } catch {}
+
+    ta.maxLength = MAX_TEXT;
+    ta.value = (text || '').slice(0, MAX_TEXT);
+    note.value = '';
+    updateCounter();
+
+    const peb = matched && window.MB && window.MB.peb ? window.MB.peb(matched) : neutralPeb(host || articleTitle);
+    match.innerHTML = `
+      ${peb}
+      <div class="txt">
+        <span class="src">${esc(matched ? matched.name : (host || 'A web page'))}</span>
+        ${articleTitle ? `<span class="art">${esc(articleTitle)}</span>` : ''}
+        <span class="ok">${matched ? `${ICON.check}Matched to a source in your brief` : 'Not from one of your sources'}</span>
+      </div>`;
+
+    document.getElementById('clp-save-return').hidden = !url;
+    document.getElementById('share-foot').hidden = !url;
+    document.getElementById('share-signin').hidden = isLoggedIn();
+    shareState = { url: url || '', articleTitle, matched };
+
+    if (window.MB && window.MB.showView) window.MB.showView('share');
+    setTimeout(() => ta.focus({ preventScroll: true }), 80);
+  }
+
+  async function submitShare(mode) {
+    if (!shareState) return;
+    const ta = document.getElementById('clp-save-text');
+    const note = document.getElementById('clp-save-note');
+    const trimmed = ta.value.trim();
+    if (!trimmed) { toast('Empty passage. Nothing to save.'); ta.focus(); return; }
+    const btns = [document.getElementById('clp-save-return'), document.getElementById('clp-save-open')];
+    btns.forEach(b => { b.disabled = true; });
+    let saved = null;
+    try {
+      saved = await saveClipping({
+        text: trimmed,
+        note: note.value,
+        articleUrl: shareState.url,
+        articleTitle: shareState.articleTitle,
+        source: shareState.matched || null
+      });
+    } finally {
+      btns.forEach(b => { b.disabled = false; });
+    }
+    if (!saved) {
+      document.getElementById('share-signin').hidden = isLoggedIn();
+      return;
+    }
+    shareState = null;
+    const returnUrl = mode === 'return' ? buildScrollUrl(saved) : '';
+    if (returnUrl) {
+      toast('Saved. Going back to the article…', { duration: 1600 });
+      setTimeout(() => { window.location.href = returnUrl; }, 350);
+    } else {
+      if (window.MB && window.MB.navigate) window.MB.navigate('#/clippings', { replace: true });
+      toast('Clipping saved.', { duration: 2000 });
+    }
+  }
+
+  function discardShare() {
+    shareState = null;
+    if (window.MB && window.MB.back) window.MB.back('#/');
+  }
+
+  function setupShareView() {
+    document.getElementById('clp-save-text')?.addEventListener('input', updateCounter);
+    document.getElementById('clp-save-return')?.addEventListener('click', () => submitShare('return'));
+    document.getElementById('clp-save-open')?.addEventListener('click', () => submitShare('open'));
+    document.getElementById('share-discard')?.addEventListener('click', discardShare);
+    document.getElementById('clp-save-text')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitShare('open');
+    });
   }
 
   // ═════════════════════════════════════════════════════════════════════
@@ -1312,19 +1156,12 @@
   // ═════════════════════════════════════════════════════════════════════
 
   function init() {
-    // Escape closes the Clippings window (it had no keyboard close before)
-    document.addEventListener('keydown', (e) => {
-      const ov = document.getElementById('clippings-overlay');
-      if (e.key === 'Escape' && ov && ov.classList.contains('open')
-          && !document.querySelector('.mb-confirm-overlay.visible')) {
-        close();
-        e.stopImmediatePropagation();
-      }
-    });
     loadFromCache();
     updateBadge();
     setupAuthListener();
+    setupShareView();
     document.addEventListener('click', rememberOutboundArticleClick, true);
+    document.getElementById('clip-search-btn')?.addEventListener('click', toggleSearch);
 
     // Pull from cloud if already signed in. The Supabase session is the source
     // of truth here; Sync.isLoggedIn() can lag during a cold PWA share launch.
@@ -1348,6 +1185,9 @@
       }, 500);
     });
 
+    // Landed directly on #/clippings before this file loaded
+    if (isActive()) render();
+
     // Handle a share-target redirect on initial load
     handleSharedPayloadIfAny();
     // …and on subsequent hashchanges, in case the user re-shares
@@ -1366,7 +1206,9 @@
   window.Clippings = {
     open,
     close,
+    render,
     count: getCount,
+    latest: (n) => clippings.slice(0, n || 2),
     // Exposed for debugging / future inline-save flows
     _save: saveClipping
   };
