@@ -1,5 +1,31 @@
 # Changelog
 
+## v29 — Daylight for the front door
+
+### Changed
+- **Landing page** (`index.html`) rebuilt in Daylight: the rising sun, a sample
+  brief in the app's own layout, and copy for how Morning Brief works now
+  (what's new since you last looked, your order, then it ends). The Auxila
+  strip and credit are unchanged.
+- **Privacy page** rebuilt in Daylight and brought up to date: it now lists
+  clippings in the cloud, the on-device "seen" and "opened" markers, the
+  hidden-source flag, feed discovery through the proxy, and OPML export. It
+  also corrects the old claim that the session lives in a cookie (it's in
+  browser storage).
+
+### Added
+- **Sign-in email templates** in `emails/` (magic link and confirm signup) to
+  paste into Supabase Auth. See the README.
+
+### Files modified
+
+| File | Changes |
+|---|---|
+| `index.html` | Rebuilt in Daylight |
+| `privacy.html` | Rebuilt in Daylight, content updated |
+| `emails/*.html` | New |
+| `sw.js` | Cache bump v28 → v29 |
+
 ## v28 — Daylight
 
 A redesign around three rules: color means a source, your order decides, and
